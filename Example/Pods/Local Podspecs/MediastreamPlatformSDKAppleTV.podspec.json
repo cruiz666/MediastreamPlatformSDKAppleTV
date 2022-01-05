@@ -1,0 +1,22 @@
+{
+  "name": "MediastreamPlatformSDKAppleTV",
+  "version": "0.1.0",
+  "summary": "A short description of MediastreamPlatformSDKAppleTV.",
+  "description": "TODO: Add long description of the pod here.",
+  "homepage": "https://github.com/Carlos Ruiz/MediastreamPlatformSDKAppleTV",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "Carlos Ruiz": "cruiz@mediastre.am"
+  },
+  "source": {
+    "git": "https://github.com/Carlos Ruiz/MediastreamPlatformSDKAppleTV.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "source_files": "MediastreamPlatformSDKAppleTV/Classes/**/*"
+}

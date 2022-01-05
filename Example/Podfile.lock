@@ -1,0 +1,16 @@
+PODS:
+  - MediastreamPlatformSDKAppleTV (0.1.0)
+
+DEPENDENCIES:
+  - MediastreamPlatformSDKAppleTV (from `../`)
+
+EXTERNAL SOURCES:
+  MediastreamPlatformSDKAppleTV:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  MediastreamPlatformSDKAppleTV: 05a6b11a685877812672ba2a64bd16d30f0530c1
+
+PODFILE CHECKSUM: a972935c4acd756da9ba4ef185dbd8654802f3a6
+
+COCOAPODS: 1.10.1
