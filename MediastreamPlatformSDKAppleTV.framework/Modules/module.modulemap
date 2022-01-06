@@ -1,0 +1,11 @@
+framework module MediastreamPlatformSDKAppleTV {
+  umbrella header "MediastreamPlatformSDKAppleTV-umbrella.h"
+
+  export *
+  module * { export * }
+}
+
+module MediastreamPlatformSDKAppleTV.Swift {
+    header "MediastreamPlatformSDKAppleTV-Swift.h"
+    requires objc
+}

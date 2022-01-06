@@ -1,16 +1,35 @@
 PODS:
-  - MediastreamPlatformSDKAppleTV (0.1.0)
+  - GoogleAds-IMA-tvOS-SDK (4.4.2)
+  - MediastreamPlatformSDKAppleTV (0.1.0):
+    - GoogleAds-IMA-tvOS-SDK (~> 4.2)
+    - YouboraAVPlayerAdapter
+    - YouboraLib
+  - YouboraAVPlayerAdapter (6.6.1):
+    - YouboraAVPlayerAdapter/Default (= 6.6.1)
+    - YouboraLib (~> 6.5)
+  - YouboraAVPlayerAdapter/Default (6.6.1):
+    - YouboraLib (~> 6.5)
+  - YouboraLib (6.6.6)
 
 DEPENDENCIES:
   - MediastreamPlatformSDKAppleTV (from `../`)
+
+SPEC REPOS:
+  trunk:
+    - GoogleAds-IMA-tvOS-SDK
+    - YouboraAVPlayerAdapter
+    - YouboraLib
 
 EXTERNAL SOURCES:
   MediastreamPlatformSDKAppleTV:
     :path: "../"
 
 SPEC CHECKSUMS:
-  MediastreamPlatformSDKAppleTV: 05a6b11a685877812672ba2a64bd16d30f0530c1
+  GoogleAds-IMA-tvOS-SDK: ab4419ba59b75c77b329e86ce408cb81ac117fe4
+  MediastreamPlatformSDKAppleTV: d956afd260ef4568871a0dade39c27d6a7f24940
+  YouboraAVPlayerAdapter: b5ac5c721b6a96702fdd45cfcbe03ce63e6151fe
+  YouboraLib: 3e404d787a42be238e2d61150406949dca715150
 
-PODFILE CHECKSUM: a972935c4acd756da9ba4ef185dbd8654802f3a6
+PODFILE CHECKSUM: b88f956dd64b20dfc6afafb2365f1f68d3f33059
 
 COCOAPODS: 1.10.1

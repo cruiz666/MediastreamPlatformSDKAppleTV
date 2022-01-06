@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'MediastreamPlatformSDKAppleTV'
   s.version          = '0.1.0'
-  s.summary          = 'A short description of MediastreamPlatformSDKAppleTV.'
+  s.summary          = 'Mediastream Platform SDK for AppleTV'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -21,22 +21,19 @@ Pod::Spec.new do |s|
 TODO: Add long description of the pod here.
                        DESC
 
-  s.homepage         = 'https://github.com/Carlos Ruiz/MediastreamPlatformSDKAppleTV'
-  # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
+  s.homepage         = 'https://github.com/cruiz666/MediastreamPlatformSDKAppleTV'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Carlos Ruiz' => 'cruiz@mediastre.am' }
-  s.source           = { :git => 'https://github.com/Carlos Ruiz/MediastreamPlatformSDKAppleTV.git', :tag => s.version.to_s }
-  # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
-
-  s.ios.deployment_target = '9.0'
-
-  s.source_files = 'MediastreamPlatformSDKAppleTV/Classes/**/*'
+  s.source           = { :http => 'https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.1.0/MediastreamPlatformSDKAppleTV.zip' }
+  s.tvos.deployment_target = '10.0'
+  s.swift_version    = ['5.2', '5.3', '5.3.1', '5.3.2', '5.3.3']
+  s.vendored_frameworks = 'MediastreamPlatformSDKAppleTV.framework'
+  s.dependency 'YouboraAVPlayerAdapter'
+  s.dependency 'YouboraLib'
+  s.dependency 'GoogleAds-IMA-tvOS-SDK', '~> 4.2'
+  s.pod_target_xcconfig = {
+    'EXCLUDED_ARCHS[sdk=tvossimulator*]' => 'arm64'
+  }
+  s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=tvossimulator*]' => 'arm64' }
   
-  # s.resource_bundles = {
-  #   'MediastreamPlatformSDKAppleTV' => ['MediastreamPlatformSDKAppleTV/Assets/*.png']
-  # }
-
-  # s.public_header_files = 'Pod/Classes/**/*.h'
-  # s.frameworks = 'UIKit', 'MapKit'
-  # s.dependency 'AFNetworking', '~> 2.3'
 end

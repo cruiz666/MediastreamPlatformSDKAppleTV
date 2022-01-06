@@ -291,11 +291,17 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-MediastreamPlatformSDKAppleTV_Example/Pods-MediastreamPlatformSDKAppleTV_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/MediastreamPlatformSDKAppleTV/MediastreamPlatformSDKAppleTV.framework",
+				"${PODS_ROOT}/GoogleAds-IMA-tvOS-SDK/GoogleInteractiveMediaAds.framework",
+				"${PODS_ROOT}/../../MediastreamPlatformSDKAppleTV.framework",
+				"${BUILT_PRODUCTS_DIR}/YouboraAVPlayerAdapter/YouboraAVPlayerAdapter.framework",
+				"${BUILT_PRODUCTS_DIR}/YouboraLib/YouboraLib.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleInteractiveMediaAds.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MediastreamPlatformSDKAppleTV.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/YouboraAVPlayerAdapter.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/YouboraLib.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

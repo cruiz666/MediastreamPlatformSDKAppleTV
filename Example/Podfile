@@ -1,6 +1,6 @@
 use_frameworks!
 
-platform :ios, '9.0'
+platform :tvos, '10.0'
 
 target 'MediastreamPlatformSDKAppleTV_Example' do
   pod 'MediastreamPlatformSDKAppleTV', :path => '../'
