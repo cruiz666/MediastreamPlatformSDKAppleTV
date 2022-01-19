@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'MediastreamPlatformSDKAppleTV'
-  s.version          = '0.1.0'
+  s.version          = '0.1.1'
   s.summary          = 'Mediastream Platform SDK for AppleTV'
 
 # This description is used to generate tags and improve search results.
@@ -24,12 +24,12 @@ TODO: Add long description of the pod here.
   s.homepage         = 'https://github.com/cruiz666/MediastreamPlatformSDKAppleTV'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Carlos Ruiz' => 'cruiz@mediastre.am' }
-  s.source           = { :http => 'https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.1.0/MediastreamPlatformSDKAppleTV.zip' }
+  s.source           = { :http => 'https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.1.1/MediastreamPlatformSDKAppleTV.zip' }
   s.tvos.deployment_target = '10.0'
   s.swift_version    = ['5.2', '5.3', '5.3.1', '5.3.2', '5.3.3']
   s.vendored_frameworks = 'MediastreamPlatformSDKAppleTV.framework'
-  s.dependency 'YouboraAVPlayerAdapter'
-  s.dependency 'YouboraLib'
+  s.dependency 'YouboraAVPlayerAdapter', '~> 6.3.5'
+  s.dependency 'YouboraLib', '~> 6.3.9'
   s.dependency 'GoogleAds-IMA-tvOS-SDK', '~> 4.2'
   s.pod_target_xcconfig = {
     'EXCLUDED_ARCHS[sdk=tvossimulator*]' => 'arm64'
