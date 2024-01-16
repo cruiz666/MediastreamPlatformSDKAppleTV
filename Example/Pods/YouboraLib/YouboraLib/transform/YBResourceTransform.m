@@ -9,38 +9,37 @@
 #import "YBResourceTransform.h"
 
 #import "YBPlugin.h"
+#import "YBConstants.h"
 #import "YBRequest.h"
 #import "YBRequestBuilder.h"
 #import "YBCdnParser.h"
+#import "YBHlsParser.h"
 #import "YBCdnConfig.h"
 #import "YBLog.h"
-#import "YouboraLib/YouboraLib-Swift.h"
 
-@interface YBResourceTransform() <CdnTransformDoneDelegate>
+@interface YBResourceTransform()
 
 // Private properties
-@property(nonatomic, strong) NSString * currentResource;
-
+@property(nonatomic, weak) YBPlugin * plugin;
+@property(nonatomic, strong) NSString * realResource;
+@property(nonatomic, strong) NSString * beginResource; // Initial resource
 @property(nonatomic, strong) NSString * cdnName;
 @property(nonatomic, strong) NSString * cdnNodeHost;
 @property(nonatomic, assign) YBCdnType cdnNodeType;
 @property(nonatomic, strong) NSString * cdnNodeTypeString;
 @property(nonatomic, strong) NSString * cdnNameHeader;
 
+@property(nonatomic, strong) YBHlsParser * hlsParser;
 @property(nonatomic, strong) YBCdnParser * cdnParser;
-
-@property(nonatomic) Boolean cdnEnabled;
-
-@property(nonatomic, strong) NSArray <id<YBResourceParser>> *parsers;
 
 @property(nonatomic, strong) NSMutableArray<NSString *> * cdnList;
 
+@property(nonatomic, assign) bool hlsEnabled;
+@property(nonatomic, assign) bool cdnEnabled;
+
 @property(nonatomic, strong) NSTimer * timerTimeout;
-@property(nonatomic, weak) YBPlugin * plugin;
 
 @property(nonatomic, assign, readwrite) bool isFinished;
-
-@property(nonatomic, strong) NSString *transportFormat;
 
 @end
 
@@ -52,33 +51,35 @@
 {
     self = [super init];
     if (self) {
+        self.plugin = nil;
         self.isFinished = false;
     }
     return self;
 }
 
-- (instancetype)initWithPlugin:(YBPlugin*)plugin {
+- (instancetype)initWithPlugin:(YBPlugin *)plugin {
     self = [self init];
+    
+    self.plugin = plugin;
+    self.realResource = nil;
+    self.beginResource = nil;
+    self.cdnName = nil;
+    self.cdnNodeHost = nil;
+    self.cdnNodeType = YBCdnTypeUnknown;
+    self.cdnNodeTypeString = nil;
     
     self.isBusy = false;
     
-    self.plugin = plugin;
-    
-    if (self.plugin.isParseResource) {
-        self.parsers = @[
-            [[YBLocationParser alloc] init],
-            [[YBHlsParser alloc] init],
-            [[YBDashParser alloc] init]
-        ];
-    } else {
-        self.parsers = @[];
-    }
     return self;
 }
 
 #pragma mark - Public methods
 - (NSString *) getResource {
-    return self.currentResource;
+    if (self.realResource != nil) {
+        return self.realResource;
+    } else {
+        return self.beginResource;
+    }
 }
 
 - (NSString *) getCdnName {
@@ -110,130 +111,76 @@
     return self.cdnNodeTypeString;
 }
 
-- (void)begin:(NSString *)originalResource userDefinedTransportFormat:(NSString* _Nullable)definedTransportFormat{
+- (void)begin:(NSString *)originalResource {
     if (!self.isBusy) {
-        
-        if ([YBResourceParserUtil isFinalURLWithResourceUrl:originalResource]) {
-            self.currentResource = originalResource;
-            [self done];
-            return;
-        }
-        
-        self.transportFormat = nil;
         self.isBusy = true;
         self.isFinished = false;
         
-        self.cdnName = nil;
-        self.cdnNodeHost = nil;
-        self.cdnNodeType = YBCdnTypeUnknown;
-        self.cdnNodeTypeString = nil;
+        self.hlsEnabled = [self.plugin isParseHls];
         self.cdnEnabled = [self.plugin isParseCdnNode];
         self.cdnList = [[self.plugin getParseCdnNodeList] mutableCopy];
-        
+        self.cdnNameHeader = [self.plugin getParseCdnNameHeader];
         if (self.cdnNameHeader != nil) {
             [YBCdnParser setBalancerHeaderName:self.cdnNameHeader];
         }
         
+        self.beginResource = originalResource;
+        
         [self setTimeout];
         
-        if(self.parsers.count > 0) {
-            [self parse:self.parsers.firstObject currentResource:originalResource userDefinedTransportFormat:definedTransportFormat];
+        if (self.hlsEnabled) {
+            [self parseHls];
+        } else if (self.cdnEnabled) {
+            [self parseCdn];
         } else {
-            [self parse:nil currentResource:originalResource userDefinedTransportFormat:definedTransportFormat];
+            [self done];
         }
-        
     }
-}
-
--(void)parse:(id<YBResourceParser> _Nullable)parser currentResource:(NSString*)resource userDefinedTransportFormat:(NSString* _Nullable)definedTransportFormat{
-    //No more parsers available try to parse cdn then
-    if (!parser) {
-        self.currentResource = resource;
-        [self parseCdn];
-        return;
-    }
-    
-    [self requestAndParse:parser currentResource:resource userDefinedTransportFormat:definedTransportFormat];
-}
-
--(void)requestAndParse:(id<YBResourceParser> _Nullable)parser currentResource:(NSString*)resource userDefinedTransportFormat:(NSString* _Nullable)definedTransportFormat{
-    YBRequest *request = [[YBRequest alloc] initWithHost:resource andService:nil];
-    
-    [request addRequestSuccessListener:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSDictionary<NSString *,id> * _Nullable listenerParams) {
-        if (![parser isSatisfiedWithResource:resource manifest:data]) {
-            [self parse:[self getNextParser:parser] currentResource:resource userDefinedTransportFormat:definedTransportFormat];
-        } else {
-            NSString *newResource = [parser parseResourceWithData:data response:(NSHTTPURLResponse*)response listenerParents:listenerParams];
-            
-            if (!newResource && ![response.URL.absoluteString isEqualToString:resource]) {
-                newResource = response.URL.absoluteString;
-            }
-            
-            NSString *transportFormat = [parser parseTransportFormatWithData:data response:(NSHTTPURLResponse*)response listenerParents:listenerParams userDefinedTransportFormat: definedTransportFormat];
-            
-            if (transportFormat) {
-                self.transportFormat = transportFormat;
-            }
-            
-            if (!newResource) {
-                [self parse:[self getNextParser:parser] currentResource:resource userDefinedTransportFormat:definedTransportFormat];
-            } else {
-                [self parse:parser currentResource:newResource userDefinedTransportFormat:definedTransportFormat];
-            }
-        }
-    }];
-    
-    [request addRequestErrorListener:^(NSError * _Nullable error) {
-        [self parse:[self getNextParser:parser] currentResource:resource userDefinedTransportFormat:definedTransportFormat];
-    }];
-    
-    [request send];
-}
-
--(id<YBResourceParser> _Nullable)getNextParser:(id<YBResourceParser>)parser {
-    if (parser == self.parsers.lastObject) { return nil; }
-    
-    return [self.parsers objectAtIndex: [self.parsers indexOfObject:parser] + 1];
 }
 
 
 // Override
 - (void)parse:(YBRequest *)request {
-    if ([YBConstantsYouboraService.start isEqualToString:request.service]) {
+    if ([YouboraServiceStart isEqualToString:request.service]) {
         NSMutableDictionary * lastSent = self.plugin.requestBuilder.lastSent;
         
-        //No need to replace now
-        /*NSString * resource = [self getResource];
-         
-         
-         [request setParam:resource forKey:YBConstantsRequest.mediaResource];
-         lastSent[YBConstantsRequest.mediaResource] = resource;*/
+        NSString * resource = [self getResource];
+        
+        [request setParam:resource forKey:@"mediaResource"];
+        lastSent[@"mediaResource"] = resource;
         
         if (self.cdnEnabled) {
-            NSString * cdn = request.params[YBConstantsRequest.cdn];
+            NSString * cdn = request.params[@"cdn"];
             if (cdn == nil) {
                 cdn = [self getCdnName];
-                [request setParam:cdn forKey:YBConstantsRequest.cdn];
+                [request setParam:cdn forKey:@"cdn"];
             }
             
-            lastSent[YBConstantsRequest.cdn] = cdn;
+            lastSent[@"cdn"] = cdn;
             
-            [request setParam:[self getNodeHost] forKey:YBConstantsRequest.nodeHost];
-            lastSent[YBConstantsRequest.nodeHost] = [self getNodeHost];
+            [request setParam:[self getNodeHost] forKey:@"nodeHost"];
+            lastSent[@"nodeHost"] = [self getNodeHost];
             
-            [request setParam:[self getNodeType] forKey:YBConstantsRequest.nodeType];
-            lastSent[YBConstantsRequest.nodeType] = [self getNodeType];
+            [request setParam:[self getNodeType] forKey:@"nodeType"];
+            lastSent[@"nodeType"] = [self getNodeType];
             
-            [request setParam:[self getNodeTypeString] forKey:YBConstantsRequest.nodeTypeString];
-            lastSent[YBConstantsRequest.nodeTypeString] = [self getNodeTypeString];
+            [request setParam:[self getNodeTypeString] forKey:@"nodeTypeString"];
+            lastSent[@"nodeTypeString"] = [self getNodeTypeString];
         }
     }
 }
 
 #pragma mark - Private methods
+- (void) parseHls {
+    self.hlsParser = [self createHlsParser];
+    
+    [self.hlsParser addHlsTransformDoneDelegate:self];
+    
+    [self.hlsParser parse:self.beginResource parentResource:nil];
+}
 
 - (void) parseCdn {
-    if (self.cdnList.count > 0 && self.cdnEnabled) {
+    if (self.cdnList.count != 0) {
         NSString * cdn = self.cdnList.firstObject;
         [self.cdnList removeObjectAtIndex:0];
         
@@ -248,6 +195,7 @@
             [self parseCdn];
         } else {
             [self.cdnParser addCdnTransformDelegate:self];
+            
             // TODO: previous responses
             [self.cdnParser parseWithUrl:[self getResource] andPreviousResponses:nil];
         }
@@ -276,7 +224,36 @@
     }
 }
 
-- (void)cdnTransformDone:(nonnull YBCdnParser *)cdnParser {
+- (void)done {
+    self.isFinished = true;
+    [super done];
+}
+
+- (NSTimer *) createNonRepeatingScheduledTimerWithInterval:(NSTimeInterval) interval {
+    return [NSTimer scheduledTimerWithTimeInterval:interval target:self selector:@selector(parseTimeout:) userInfo:nil repeats:false];
+}
+
+- (YBHlsParser *) createHlsParser {
+    return [YBHlsParser new];
+}
+
+- (YBCdnParser *) createCdnParser:(NSString *) cdn {
+    return [YBCdnParser createWithName:cdn];
+}
+
+# pragma mark - HlsTransformDoneDelegate
+- (void) hlsTransformDone:(nullable NSString *) parsedResource fromHlsParser:(YBHlsParser *) parser {
+    self.realResource = parsedResource;
+    if (self.cdnEnabled) {
+        [self parseCdn];
+    } else {
+        [self done];
+    }
+    self.hlsParser = nil;
+}
+
+#pragma mark - CdnTransformDoneDelegate
+- (void) cdnTransformDone:(YBCdnParser *) cdnParser {
     self.cdnName = cdnParser.cdnName;
     self.cdnNodeHost = cdnParser.cdnNodeHost;
     self.cdnNodeType = cdnParser.cdnNodeType;
@@ -289,25 +266,6 @@
     } else {
         [self parseCdn];
     }
-}
-
-- (void)done {
-    if (self.isFinished) { return; }
-    self.isFinished = true;
-    
-    [super done];
-}
-
-- (NSTimer *) createNonRepeatingScheduledTimerWithInterval:(NSTimeInterval) interval {
-    return [NSTimer scheduledTimerWithTimeInterval:interval target:self selector:@selector(parseTimeout:) userInfo:nil repeats:false];
-}
-
-- (YBCdnParser *) createCdnParser:(NSString *) cdn {
-    return [YBCdnParser createWithName:cdn];
-}
-
-- (NSString *)getTransportFormat {
-    return self.transportFormat;
 }
 
 @end

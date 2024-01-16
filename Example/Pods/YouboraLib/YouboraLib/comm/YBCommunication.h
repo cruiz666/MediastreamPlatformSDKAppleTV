@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Internally, Communication implements queues of <YBRequest> objects.
  * This queue can be blocked depending on its <YBTransform>.
  */
-@interface YBCommunication : NSObject
+@interface YBCommunication : NSObject<YBTransformDoneListener>
 
 /// ---------------------------------
 /// @name Public methods

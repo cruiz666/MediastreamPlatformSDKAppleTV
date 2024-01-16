@@ -8,9 +8,19 @@
 
 #import "YBTransform.h"
 #import "YBTransformSubclass.h"
-#import "YBConstants.h"
 
 @interface YBTransform()
+
+/// ---------------------------------
+/// @name Private properties
+/// ---------------------------------
+
+/**
+ * List of listeners that will be notified once the Transform is done, if it's asynchronous or
+ * it has to wait for something to happen.
+ */
+@property (nonatomic, strong) NSMutableArray<id<YBTransformDoneListener>> * listeners;
+
 @end
 
 @implementation YBTransform
@@ -20,6 +30,7 @@
 {
     self = [super init];
     if (self) {
+        self.listeners = [NSMutableArray arrayWithCapacity:1];
         self.isBusy = true;
         self.sendRequest = true;
     }
@@ -27,6 +38,17 @@
 }
 
 #pragma mark - Public methods
+- (void)addTransformDoneListener:(id<YBTransformDoneListener>)listener {
+    if (listener != nil) {
+        [self.listeners addObject:listener];
+    }
+}
+
+- (void) removeTransformDoneListener:(id<YBTransformDoneListener>)listener {
+    if (listener != nil) {
+        [self.listeners removeObject:listener];
+    }
+}
 
 - (bool)isBlocking:(nullable YBRequest *) request {
     return self.isBusy;
@@ -43,27 +65,12 @@
     return self.isBusy ? YBStateBlocked : YBStateNoBlocked;
 }
 
--(void)addTranformDoneObserver:(id)observer andSelector:(SEL)selector {
-    [[NSNotificationCenter defaultCenter] addObserver:observer selector:selector name:[self getNotificationName] object: nil];
-}
-
--(void)removeTranformDoneObserver:(id)observer {
-    [[NSNotificationCenter defaultCenter] removeObserver:observer name:[self getNotificationName] object:nil];
-}
-
-
 #pragma mark - "Protected" methods
--(NSString*)getNotificationName {
-    return NOTIFICATION_NAME_TRANSFORM_DONE;
-}
-
 - (void) done {
     self.isBusy = false;
-    [[NSNotificationCenter defaultCenter] postNotificationName:[self getNotificationName] object:self];
-}
-
--(void)forceDone {
-    [self done];
+    for (id<YBTransformDoneListener> listener in self.listeners) {
+        [listener transformDone:self];
+    }
 }
 
 #pragma mark - Subclass methods

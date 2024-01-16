@@ -10,15 +10,12 @@
 #import "YBLog.h"
 #import "YBRequest.h"
 #import "YBTransform.h"
-#import "YBConstants.h"
 
 @interface YBCommunication()
 
 @property (nonatomic, strong) NSMutableArray<YBTransform *> * transforms;
 
 @property (nonatomic, strong) NSMutableArray<YBRequest *> * requests;
-
-@property (nonatomic, strong) NSLock * requestsLock;
 
 @end
 
@@ -31,7 +28,6 @@
     if (self) {
         self.transforms = [NSMutableArray array];
         self.requests = [NSMutableArray array];
-        self.requestsLock = [[NSLock alloc] init];
     }
     return self;
 }
@@ -55,7 +51,7 @@
 
 - (void)addTransform:(YBTransform *)transform {
     if (transform != nil) {
-        [transform addTranformDoneObserver:self andSelector:@selector(transformDone:)];
+        [transform addTransformDoneListener:self];
         [self.transforms addObject:transform];
     } else {
         [YBLog warn:@"Transform is nil in addTransform"];
@@ -70,21 +66,12 @@
 
 #pragma mark - Private methods
 - (void) registerRequest:(YBRequest *) request {
-    // Lock
-    [self.requestsLock lock];
     [self.requests addObject:request];
-    // Unlock
-    [self.requestsLock unlock];
     [self processRequests];
-    
-    
 }
 
 - (void) processRequests {
-    // Lock
-    [self.requestsLock lock];
     for (int i = (int) self.requests.count - 1; i >= 0; i--) {
-        
         YBRequest * request = self.requests[i];
         YBTransformState transformState = [self transform:request];
         if(transformState == YBStateOffline){
@@ -100,8 +87,6 @@
             [request send];
         }*/
     }
-    [self.requestsLock unlock];
-    // Unlock
 }
 
 - (YBTransformState) transform: (YBRequest *) request {
@@ -127,7 +112,8 @@
     return true;*/
 }
 
-- (void)transformDone:(NSNotification *)transform {
+#pragma mark - YBTransformDoneListener delegate
+- (void)transformDone:(YBTransform *)transform {
     [self processRequests];
 }
 

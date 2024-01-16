@@ -8,7 +8,7 @@
 
 #import "YBNqs6Transform.h"
 #import "YBRequest.h"
-#import "YouboraLib/YouboraLib-Swift.h"
+#import "YBConstants.h"
 
 #define YB_REG_EXP_ENTITY_TYPE_AND_VALUE @"\"(.+?)\":\"?(.+?)\"?[,}]"
 
@@ -29,10 +29,10 @@ static NSRegularExpression * regexPattern;
 #pragma mark - Public methods
 - (void)parse:(YBRequest *)request {
     if (request != nil) {
-        [YBNqs6Transform cloneParam:YBConstantsRequest.accountCode intoParam:YBConstantsRequest.system forRequest:request];
-        [YBNqs6Transform cloneParam:YBConstantsRequest.transactionCode intoParam:@"transcode" forRequest:request];
-        [YBNqs6Transform cloneParam:YBConstantsRequest.username intoParam:@"user" forRequest:request];
-        [YBNqs6Transform cloneParam:YBConstantsRequest.mediaResource intoParam:@"resource" forRequest:request];
+        [YBNqs6Transform cloneParam:@"accountCode" intoParam:@"system" forRequest:request];
+        [YBNqs6Transform cloneParam:@"transactionCode" intoParam:@"transcode" forRequest:request];
+        [YBNqs6Transform cloneParam:@"username" intoParam:@"user" forRequest:request];
+        [YBNqs6Transform cloneParam:@"mediaResource" intoParam:@"resource" forRequest:request];
         [YBNqs6Transform cloneParam:@"errorMsg" intoParam:@"msg" forRequest:request];
         
         NSString * service = request.service;
@@ -41,11 +41,11 @@ static NSRegularExpression * regexPattern;
             return;
         }
         
-        if ([service isEqualToString: YBConstantsYouboraService.join]) {
-            [YBNqs6Transform cloneParam:YBConstantsRequest.playhead intoParam:@"time" forRequest:request];
+        if ([service isEqualToString:YouboraServiceJoin]) {
+            [YBNqs6Transform cloneParam:@"playhead" intoParam:@"time" forRequest:request];
         }
         
-        if ([service isEqualToString: YBConstantsYouboraService.ping]) {
+        if ([service isEqualToString:YouboraServicePing]) {
             /*
              * NQS6 only allows one entity change per ping. In order to be as most backwards
              * compatible as possible, at least we send one.
@@ -73,18 +73,18 @@ static NSRegularExpression * regexPattern;
                     request.params[@"entityValue"] = entityValue;
                 }
             }
-        } else if ([service isEqualToString: YBConstantsYouboraService.buffer]) {
-            [YBNqs6Transform cloneParam:YBConstantsRequest.bufferDuration intoParam:@"duration" forRequest:request];
+        } else if ([service isEqualToString:YouboraServiceBuffer]) {
+            [YBNqs6Transform cloneParam:@"bufferDuration" intoParam:@"duration" forRequest:request];
             
-        } else if ([service isEqualToString: YBConstantsYouboraService.seek]) {
-            [YBNqs6Transform cloneParam:YBConstantsRequest.seekDuration intoParam:@"duration" forRequest:request];
+        } else if ([service isEqualToString:YouboraServiceSeek]) {
+            [YBNqs6Transform cloneParam:@"seekDuration" intoParam:@"duration" forRequest:request];
             
-        } else if ([service isEqualToString: YBConstantsYouboraService.start]) {
-            [YBNqs6Transform cloneParam:YBConstantsRequest.mediaDuration intoParam:@"duration" forRequest:request];
+        } else if ([service isEqualToString:YouboraServiceStart]) {
+            [YBNqs6Transform cloneParam:@"mediaDuration" intoParam:@"duration" forRequest:request];
             
-        } else if ([service isEqualToString: YBConstantsYouboraService.join]) {
-            [YBNqs6Transform cloneParam:YBConstantsRequest.joinDuration intoParam:@"time" forRequest:request];
-            [YBNqs6Transform cloneParam:YBConstantsRequest.playhead intoParam:@"eventTime" forRequest:request];
+        } else if ([service isEqualToString:YouboraServiceJoin]) {
+            [YBNqs6Transform cloneParam:@"joinDuration" intoParam:@"time" forRequest:request];
+            [YBNqs6Transform cloneParam:@"playhead" intoParam:@"eventTime" forRequest:request];
         }
     }
 }

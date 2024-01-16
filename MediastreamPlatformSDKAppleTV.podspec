@@ -27,7 +27,7 @@ TODO: Add long description of the pod here.
   s.source           = { :http => 'https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.2.0/MediastreamPlatformSDKAppleTVxC.zip' }
   s.tvos.deployment_target = '14.0'
   s.swift_version    = ['5.2', '5.3', '5.3.1', '5.3.2', '5.3.3']
-  s.vendored_frameworks = 'MediastreamPlatformSDKAppleTVxC.framework'
+  s.vendored_frameworks = 'MediastreamPlatformSDKAppleTV.xcframework'
   s.dependency 'YouboraAVPlayerAdapter', '6.3.5'
   s.dependency 'YouboraLib', '6.3.9'
   s.dependency 'GoogleAds-IMA-tvOS-SDK', '~> 4.9.2'

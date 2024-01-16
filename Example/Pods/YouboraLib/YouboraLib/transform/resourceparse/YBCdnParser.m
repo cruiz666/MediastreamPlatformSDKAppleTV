@@ -19,8 +19,6 @@ NSString * const YouboraCDNNameHighwinds =  @"Highwinds";
 NSString * const YouboraCDNNameFastly =     @"Fastly";
 NSString * const YouboraCDNNameBalancer =   @"Balancer";
 NSString * const YouboraCDNNameTelefonica = @"Telefonica";
-NSString * const YouboraCDNNameAmazon =     @"Amazon";
-NSString * const YouboraCDNNameEdgecast =   @"Edgecast";
 
 @interface YBCdnParser()
 
@@ -291,20 +289,16 @@ static NSMutableDictionary<NSString *, YBCdnConfig *> * cdnDefinitions;
         cdnDefinitions[YouboraCDNNameCloudfront] = cdnConfig;
         
         cdnConfig = [[YBCdnConfig alloc] initWithCode:@"AKAMAI"];
-        NSArray<YBParsableResponseHeader *> *akamaiParsers = @[
-            [[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementTypeAndHost headerName:@"X-Cache" andRegexPattern:@"(.+)\\sfrom (.+?(?=.deploy.akamaitechnologies))"],
-            [[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementHost headerName:@"akamai-mon-iucid-del" andRegexPattern:@"(.*)"],
-            [[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementType headerName:@"akamai-cache-status" andRegexPattern:@"(.+)\\sfrom\\schild"]
-        ];
-        [cdnConfig.parsers addObjectsFromArray:akamaiParsers];
+        [cdnConfig.parsers addObject:[[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementTypeAndHost headerName:@"X-Cache" andRegexPattern:@"(.+)\\sfrom (.+?(?=.deploy.akamaitechnologies))"]];
         cdnConfig.requestHeaders = [[NSMutableDictionary alloc] initWithDictionary:@{@"Pragma": @"akamai-x-cache-on, akamai-x-cache-remote-on, akamai-x-check-cacheable, akamai-x-get-cache-key, akamai-x-get-extracted-values, akamai-x-get-ssl-client-session-id, akamai-x-get-true-cache-key, akamai-x-serial-no, akamai-x-get-request-id,akamai-x-get-nonces,akamai-x-get-client-ip,akamai-x-feo-trace"}];
+        cdnConfig.requestMethod = YouboraHTTPMethodGet;
         cdnConfig.typeParser = ^YBCdnType(NSString * type) {
             
-            if ([type.lowercaseString containsString:@"hit"]) {
+            if ([@"TCP_HIT" isEqualToString:type]) {
                 return YBCdnTypeHit;
             }
             
-            if ([type.lowercaseString containsString:@"miss"]) {
+            if ([@"TCP_MISS" isEqualToString:type]) {
                 return YBCdnTypeMiss;
             }
             
@@ -323,7 +317,6 @@ static NSMutableDictionary<NSString *, YBCdnConfig *> * cdnDefinitions;
             
             return YBCdnTypeMiss;
         };
-        
         cdnDefinitions[YouboraCDNNameHighwinds] = cdnConfig;
         
         cdnConfig = [[YBCdnConfig alloc] initWithCode:@"FASTLY"];
@@ -342,47 +335,7 @@ static NSMutableDictionary<NSString *, YBCdnConfig *> * cdnDefinitions;
             
             return YBCdnTypeUnknown;
         };
-        
         cdnDefinitions[YouboraCDNNameFastly] = cdnConfig;
-        
-        cdnConfig = [[YBCdnConfig alloc] initWithCode:@"AMAZON"];
-        [cdnConfig.parsers addObject:[[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementHost headerName:@"X-AMZ-CF-POP" andRegexPattern:@"(.+)"]];
-        [cdnConfig.parsers addObject:[[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementType headerName:@"X-Cache" andRegexPattern:@"(\\S+)\\s.+"]];
-        cdnConfig.typeParser = ^YBCdnType(NSString * type) {
-            
-            if ([@"HIT" isEqualToString:type]) {
-                return YBCdnTypeHit;
-            }
-            
-            if ([@"MISS" isEqualToString:type]) {
-                return YBCdnTypeMiss;
-            }
-            
-            return YBCdnTypeUnknown;
-        };
-        
-        
-        cdnDefinitions[YouboraCDNNameAmazon] = cdnConfig;
-        
-        cdnConfig = [[YBCdnConfig alloc] initWithCode:@"EDGECAST"];
-        [cdnConfig.parsers addObject:[[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementHost headerName:@"Server" andRegexPattern:@".+\\((.+)\\/.+"]];
-        [cdnConfig.parsers addObject:[[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementType headerName:@"X-Cache" andRegexPattern:@"(.+)"]];
-        cdnConfig.typeParser = ^YBCdnType(NSString * type) {
-            
-            if ([type.lowercaseString containsString:@"hit"]) {
-                return YBCdnTypeHit;
-            }
-            
-            if ([type.lowercaseString containsString:@"miss"]) {
-                return YBCdnTypeMiss;
-            }
-            
-            return YBCdnTypeUnknown;
-        };
-        
-        
-        cdnDefinitions[YouboraCDNNameEdgecast] = cdnConfig;
-       
         
         cdnConfig = [[YBCdnConfig alloc] initWithCode:nil];
         [cdnConfig.parsers addObject:[[YBParsableResponseHeader alloc] initWithElement:YBCdnHeaderElementName headerName:nil andRegexPattern:@"(.+)"]];

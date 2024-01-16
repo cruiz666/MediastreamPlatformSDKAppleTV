@@ -8,40 +8,49 @@
 
 #import <Foundation/Foundation.h>
 
-@class YBInfinityFlags, YBViewTransform;
+@class YBPlugin, YBCommunication, YBInfinityFlags, YBViewTransform;
 @protocol YBInfinityDelegate;
 
 @interface YBInfinity : NSObject
 
-@property(nonatomic, weak, nullable) YBViewTransform * viewTransform;
+@property(nonatomic, weak, nullable) YBPlugin * plugin;
+@property (nonatomic, weak) YBViewTransform *viewTransform;
 
-@property(nonatomic, strong) YBInfinityFlags * _Nonnull flags;
+@property(nonatomic, strong) YBInfinityFlags * flags;
 
-@property(nonatomic, strong, nullable) NSString * navContext;
-@property(nonatomic, strong, nullable) NSMutableArray<NSString *> * activeSessions;
+@property(nonatomic, strong) NSString * navContext;
 
-@property(nonatomic, weak, nullable) id<YBInfinityDelegate> delegate;
+@property(nonatomic, strong) NSMutableArray<NSString *> * activeSessions;
 
-- (void) beginWithScreenName:(nonnull NSString *)screenName;
++ (id) sharedManager;
 
-- (void) beginWithScreenName:(nonnull NSString *)screenName andDimensions:(nullable NSDictionary<NSString *, NSString *> *)dimensions;
+- (void) beginWithScreenName: (nullable NSString *) screenName;
 
-- (void) fireNavWithScreenName:(nullable NSString *)screenName;
+- (void) beginWithScreenName: (nullable NSString *) screenName andDimensions:(nullable NSDictionary<NSString *, NSString *> *) dimensions;
 
-- (void) fireEvent:(nullable NSDictionary<NSString *, NSString *> *)dimensions values:(nullable NSDictionary<NSString *, NSNumber *> *)values andEventName:(nullable NSString *)eventName __deprecated_msg("Use fireEvent:dimensions:values:");
+- (void) beginWithScreenName: (nullable NSString *) screenName andDimensions:(nullable NSDictionary<NSString *, NSString *> *) dimensions andParentId:(nullable NSString *) parentId;
 
-- (void) fireEvent: (nonnull NSString *) eventName dimensions: (nullable NSDictionary<NSString *, NSString *> *) dimensions values: (nullable NSDictionary<NSString *, NSNumber *> *) values topLevelDimensions:(nullable NSDictionary<NSString *,NSString *> *)topLevelDimensions;
+- (void) fireSessionStartWithScreenName: (nullable NSString *) screenName andDimensions:(nullable NSDictionary<NSString *, NSString *> *) dimensions andParentId:(nullable NSString *) parentId;
+
+- (void) fireNavWithScreenName: (nullable NSString *) screenName;
+
+- (void) fireEvent:(nullable NSDictionary<NSString *, NSString *> *) dimensions values:(nullable NSDictionary<NSString *, NSNumber *> *) values andEventName:(nullable NSString *) eventName;
+
+- (void) fireSessionStop:(nullable NSDictionary<NSString *, NSString *> *) params;
 
 - (void) end;
 
-- (void) end:(nullable NSDictionary<NSString *, NSString *> *)params;
+- (void) end:(nullable NSDictionary<NSString *, NSString *> *) params;
 
-- (nullable NSNumber *)getLastSent;
+- (NSNumber *) getLastSent;
 
-/*
- * Method to return the session root
- */
--(NSString* _Nonnull) getSessionRoot;
+- (void) addActiveSession: (nullable NSString *) sessionId;
+
+- (void) removeActiveSession: (nullable NSString *) sessionId;
+
+- (void)addYouboraInfinityDelegate:(id<YBInfinityDelegate>)delegate;
+
+- (void)removeYouboraInfinityDelegate:(id<YBInfinityDelegate>)delegate;
 
 @end
 
@@ -49,12 +58,12 @@
 
 @optional
 
-- (void) youboraInfinityEventSessionStartWithScreenName:(nullable NSString *)screenName andDimensions:(nullable NSDictionary<NSString *, NSString *> *)dimensions;
+- (void) youboraInfinityEventSessionStartWithScreenName: (nullable NSString *) screenName andDimensions:(nullable NSDictionary<NSString *, NSString *> *) dimensions andParentId:(nullable NSString *) parentId;
 
-- (void) youboraInfinityEventNavWithScreenName:(nullable NSString *)screenName;
+- (void) youboraInfinityEventNavWithScreenName: (nullable NSString *) screenName;
 
-- (void) youboraInfinityEventEventWithDimensions:(nullable NSDictionary<NSString *, NSString *> *)dimensions values:(nullable NSDictionary<NSString *, NSNumber *> *)values andEventName:(nullable NSString *)eventName andTopLevelDimensions:(nullable NSDictionary<NSString *, NSString *> *)topLevelDimensions;
+- (void) youboraInfinityEventEventWithDimensions: (nullable NSDictionary<NSString *, NSString *> *) dimensions values: (nullable NSDictionary<NSString *, NSNumber *> *) values andEventName: (nullable NSString *) eventName;
 
-- (void) youboraInfinityEventSessionStop:(nullable NSDictionary<NSString *, NSString *> *)params;
+- (void) youboraInfinityEventSessionStop: (nullable NSDictionary<NSString *, NSString *> *) params;
 
 @end

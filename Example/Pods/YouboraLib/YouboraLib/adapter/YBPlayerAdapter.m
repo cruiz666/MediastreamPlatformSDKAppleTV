@@ -7,22 +7,21 @@
 //
 
 #import "YBPlayerAdapter.h"
+#import "YBConstants.h"
 
+#import "YBPlaybackFlags.h"
 #import "YBPlaybackChronos.h"
+#import "YBChrono.h"
 #import "YBPlayheadMonitor.h"
 #import "YBLog.h"
+#import "YBYouboraUtils.h"
 #import "YBPlugin.h"
 #import "YBOptions.h"
-
-#import "YouboraLib/YouboraLib-Swift.h"
 
 @interface YBPlayerAdapter()
 
 // Delegates list
 @property (nonatomic, strong) NSMutableArray<id<YBPlayerAdapterEventDelegate>> * eventDelegates;
-
-// Property that gonna prevent the same error to be sent in less than x seconds
-@property(nonatomic, strong) YBErrorHandler *errorHandler;
 
 @end
 
@@ -37,10 +36,9 @@
         self.player = nil;
         self.flags = [YBPlaybackFlags new];
         self.chronos = [YBPlaybackChronos new];
-        self.errorHandler = [[YBErrorHandler alloc] initWithSecondsToClean:5];
         
         if ([YBLog isAtLeastLevel:YBLogLevelNotice]) {
-            [YBLog notice:@"Adapter %@ with lib %@ is ready.", [self getVersion], YBConstants.youboraLibVersion];
+            [YBLog notice:@"Adapter %@ with lib %@ is ready.", [self getVersion], YouboraLibVersion];
         }
     }
     return self;
@@ -120,10 +118,6 @@
     return nil;
 }
 
-- (NSNumber *) getTotalBytes {
-    return nil;
-}
-
 - (NSNumber *)getThroughput {
     return nil;
 }
@@ -173,7 +167,11 @@
 }
 
 - (NSString *)getVersion {
-    return [YBConstants.youboraLibVersion stringByAppendingString:@"-generic-ios"];
+    return [YouboraLibVersion stringByAppendingString:@"-generic-ios"];
+}
+
+- (YBAdPosition)getPosition {
+    return YBAdPositionUnknown;
 }
 
 - (NSString *) getHouseholdId {
@@ -196,80 +194,6 @@
     return nil;
 }
 
-- (NSDictionary<NSString *, NSString *> *) getMetrics {
-    return nil;
-}
-
-//Ads only
-
-- (YBAdPosition)getPosition {
-    return YBAdPositionUnknown;
-}
-
-- (NSNumber *) getAdBreakNumber {
-    return nil;
-}
-
-- (NSNumber *) getAdGivenBreaks {
-    return nil;
-}
-
-- (NSNumber *) getAdExpectedBreaks {
-    return nil;
-}
-
-- (NSDictionary<NSString*, NSArray<NSNumber *> *> *) getAdExpectedPattern {
-    return nil;
-}
-
-- (NSArray *) getAdBreaksTime {
-    return nil;
-}
-
-- (NSNumber *) getGivenAds {
-    return nil;
-}
-
-- (NSString *) getAdInsertionType {
-    return nil;
-}
-
-- (NSNumber *) getExpectedAds {
-    return nil;
-}
-
-- (NSNumber *) getAdViewedDuration {
-    return nil;
-}
-
-- (NSNumber *) getAdViewability {
-    return nil;
-}
-
-- (NSValue *) isSkippable {
-    return nil;
-}
-
-- (NSString *) getAdCreativeId {
-    return nil;
-}
-
-- (NSString *) getAdProvider {
-    return nil;
-}
-
-- (nullable NSString *) getAudioCodec {
-    return nil;
-}
-
-- (nullable NSString *) getVideoCodec {
-    return nil;
-}
-
--(nullable NSString*)getURLToParse {
-    return nil;
-}
-
 // Fire methods
     
 - (void)fireAdInit {
@@ -278,7 +202,7 @@
 
 - (void)fireAdInit: (nullable NSDictionary<NSString *,NSString *> *)params {
     
-    if (!self.flags.adInitiated) {
+    if(!self.flags.adInitiated){
         self.flags.adInitiated = true;
         
         [self.chronos.adInit start];
@@ -296,8 +220,10 @@
 }
 
 - (void)fireStart:(nullable NSDictionary<NSString *,NSString *> *)params {
-    if (!self.flags.started || (self.plugin != nil && !self.plugin.isStarted)) {
+    if (!self.flags.started) {
         self.flags.started = true;
+        
+        
         
         if(!self.flags.adInitiated){
             [self.chronos.join start];
@@ -479,38 +405,34 @@
 }
 
 - (void)fireStop:(NSDictionary<NSString *,NSString *> *)params {
-    if (self == self.plugin.adsAdapter || [self.plugin isStopReady]) {
-        if (self.flags.started || self.flags.adInitiated) {
-            if (self.monitor != nil) {
-                [self.monitor stop];
-            }
-            bool wasPaused = self.flags.paused;
-            [self.flags reset];
-            
-            if(self.plugin != nil){
-                //We inform of the pauseDuration here to save it before the reset
-                if([self.plugin getPauseDuration] > 0 && wasPaused){
-                    if(params == nil){
-                        params = [[NSDictionary alloc] init];
-                    }
-                    NSMutableDictionary *mutableParams = [[NSMutableDictionary alloc] initWithDictionary:params];
-                    mutableParams[YBConstantsRequest.pauseDuration] = [NSString stringWithFormat:@"%lld",[self.chronos.pause getDeltaTime]];
-                    params = [[NSDictionary alloc] initWithDictionary:mutableParams];
+    if (self.flags.started || self.flags.adInitiated) {
+        if (self.monitor != nil) {
+            [self.monitor stop];
+        }
+        bool wasPaused = self.flags.paused;
+        [self.flags reset];
+        
+        if(self.plugin != nil){
+            //We inform of the pauseDuration here to save it before the reset
+            if([self.plugin getPauseDuration] > 0 && wasPaused){
+                if(params == nil){
+                    params = [[NSDictionary alloc] init];
                 }
+                NSMutableDictionary *mutableParams = [[NSMutableDictionary alloc] initWithDictionary:params];
+                mutableParams[@"pauseDuration"] = [NSString stringWithFormat:@"%lld",[self.chronos.pause getDeltaTime]];
+                params = [[NSDictionary alloc] initWithDictionary:mutableParams];
             }
-            
-            [self.chronos.total stop];
-            [self.chronos.join reset];
-            [self.chronos.pause reset];
-            [self.chronos.buffer reset];
-            [self.chronos.seek reset];
-            [self.chronos.adInit reset];
-            
-            for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-                [delegate youboraAdapterEventStop:params fromAdapter:self];
-            }
-            
-            [self.chronos.adViewedPeriods removeAllObjects];
+        }
+        
+        [self.chronos.total stop];
+        [self.chronos.join reset];
+        [self.chronos.pause reset];
+        [self.chronos.buffer reset];
+        [self.chronos.seek reset];
+        [self.chronos.adInit reset];
+        
+        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
+            [delegate youboraAdapterEventStop:params fromAdapter:self];
         }
     }
 }
@@ -519,47 +441,14 @@
     [self fireStop: @{@"skipped" : @"true"}];
 }
 
-- (void)fireEventWithName:(NSString *)eventName dimensions:(NSDictionary<NSString *,NSString *> *)dimensions values:(NSDictionary<NSString *,NSNumber *> *)values topLevelDimensions:(NSDictionary<NSString *,NSString *> *)topLevelDimensions {
-    if (self.flags.started) {
-        eventName = eventName == nil || [eventName isEqualToString:@""] ? @"" : eventName; //Empty string, will get ignored by the backend
-        dimensions = dimensions == nil ? @{} : dimensions;
-        values = values == nil ? @{} : values;
-        topLevelDimensions = topLevelDimensions == nil ? @{} : topLevelDimensions;
-        
-        NSMutableDictionary * params = [[NSMutableDictionary alloc] init];
-        [params addEntriesFromDictionary:topLevelDimensions];
-        params[@"dimensions"] = dimensions;
-        params[@"values"] = values;
-        params[@"name"] = eventName;
-        
-        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-            [delegate youboraAdapterEventVideoEvent:params fromAdapter:self];
-        }
-    }
-}
-
 - (void) fireCast{
     [self fireStop: @{@"casted" : @"true"}];
 }
 
 - (void)fireError:(NSDictionary<NSString *,NSString *> *)params {
-    NSString *message = params[YBConstantsErrorParams.message];
-    NSString *code = params[YBConstantsErrorParams.code];
-    
-    if (![self.errorHandler isNewErrorWithMessage:message code:code] || [YBYouboraUtils containsStringWithArray:self.plugin.options.ignoreErrors value:code]) {
-        return;
-    }
-    
-    [self fireStart];
-    self.flags.started = true;
     params = [YBYouboraUtils buildErrorParams:[params mutableCopy]];
     for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
         [delegate youboraAdapterEventError:params fromAdapter:self];
-    }
-    
-    // Fire stop case the error was found in the fatal errors
-    if ([YBYouboraUtils containsStringWithArray:self.plugin.options.fatalErrors value:code]) {
-        [self fireStop];
     }
 }
 
@@ -567,8 +456,8 @@
     [self fireError:[YBYouboraUtils buildErrorParamsWithMessage:msg code:code metadata:errorMetadata andLevel:nil]];
 }
 
-- (void) fireErrorWithMessage:(nullable NSString *) msg code:(nullable NSString *) code andMetadata:(nullable NSString *) errorMetadata andException:(nullable NSException *)exception {
-    [self fireErrorWithMessage:msg code:code andMetadata:errorMetadata];
+- (void) fireErrorWithMessage:(nullable NSString *) msg code:(nullable NSString *) code andMetadata:(nullable NSString *) errorMetadata andException:(nullable NSException *)exception{
+    
 }
 
 - (void)fireFatalError:(NSDictionary<NSString *,NSString *> *)params {
@@ -578,28 +467,18 @@
     } else {
         mutParams = [NSMutableDictionary dictionary];
     }
-    
-    NSString *code = params[YBConstantsErrorParams.code];
-    
-    // Ignore error because this error is on the list to be ignored
-    if ([YBYouboraUtils containsStringWithArray:self.plugin.options.ignoreErrors value:code]) {
-        return;
-    }
-    
     //mutParams[@"errorLevel"] = @"fatal";
     [self fireError:mutParams];
-    
-    if (![YBYouboraUtils containsStringWithArray:self.plugin.options.nonFatalErrors value:code]) {
-        [self fireStop];
-    }
+    [self fireStop];
 }
 
 - (void) fireFatalErrorWithMessage:(nullable NSString *) msg code:(nullable NSString *) code andMetadata:(nullable NSString *) errorMetadata {
     [self fireFatalError:[YBYouboraUtils buildErrorParamsWithMessage:msg code:code metadata:errorMetadata andLevel:@""]];
+    [self fireStop];
 }
 
 - (void) fireFatalErrorWithMessage:(NSString *)msg code:(NSString *)code andMetadata:(NSString *)errorMetadata andException:(NSException *)exception{
-    [self fireFatalErrorWithMessage:msg code:code andMetadata:errorMetadata];
+    
 }
 
 - (void) fireClick{
@@ -609,7 +488,7 @@
 - (void) fireClickWithAdUrl:(NSString*)adUrl{
     NSMutableDictionary<NSString *,NSString *>* params = [[NSMutableDictionary alloc] init];
     if(adUrl != nil){
-        params[YBConstantsRequest.adUrl] = adUrl;
+        params[@"adUrl"] = adUrl;
     }
     [self fireClick:params];
 }
@@ -630,86 +509,6 @@
     }
 }
 
-- (void) fireQuartile:(int) quartileNumber {
-    if (self.flags.started && quartileNumber > 0 && quartileNumber < 4) {
-        NSDictionary * params = @{@"quartile":[NSString stringWithFormat:@"%d",quartileNumber]};
-        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-            [delegate youboraAdapterEventAdQuartile:params fromAdapter:self];
-        }
-    }
-}
-
-- (void) fireAdManifest:(nullable NSDictionary<NSString *, NSString *> *) params {
-    if (!self.flags.adManifestRequested) {
-        self.flags.adManifestRequested = true;
-        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-            [delegate youboraAdapterEventAdManifest:params fromAdapter:self];
-        }
-    }
-}
-
-- (void) fireAdManifestWithError:(YBAdManifestError)error andMessage:(NSString *)message {
-    if (!self.flags.adManifestRequested) {
-        self.flags.adManifestRequested = true;
-        NSString *errorType = @"UNKNOWN";
-        switch (error) {
-            case YBAdManifestEmptyResponse:
-                errorType = @"NO_RESPONSE";
-                break;
-            case YBAdManifestWrongResponse:
-                errorType = @"EMPTY_RESPONSE";
-                break;
-            case YBAdManifestErrorNoResponse:
-                errorType = @"WRONG_RESPONSE";
-                break;
-            default:
-                errorType = @"UNKNOWN";
-                break;
-        }
-        
-        NSDictionary *params = @{
-                                 @"errorType" : errorType,
-                                 @"errorMessage" : message
-                                 };
-        
-        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-            [delegate youboraAdapterEventAdManifestError:params fromAdapter:self];
-        }
-    }
-}
-
-- (void) fireAdBreakStart {
-    [self fireAdBreakStart:nil];
-}
-
-- (void) fireAdBreakStart:(nullable NSDictionary<NSString *, NSString *> *) params {
-    if (!self.flags.adBreakStarted) {
-        self.flags.adBreakStarted = true;
-        if (self.plugin.adapter) {
-            [self.plugin.adapter firePause];
-        }
-        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-            [delegate youboraAdapterEventAdBreakStart:params fromAdapter:self];
-        }
-    }
-}
-
-- (void) fireAdBreakStop {
-    [self fireAdBreakStop:nil];
-}
-
-- (void) fireAdBreakStop:(NSDictionary<NSString *,NSString *> *)params {
-    if (self.flags.adBreakStarted && !self.flags.started) {
-        self.flags.adBreakStarted = false;
-        for (id<YBPlayerAdapterEventDelegate> delegate in self.eventDelegates) {
-            [delegate youboraAdapterEventAdBreakStop:params fromAdapter:self];
-        }
-        if (self.plugin.adapter) {
-            [self.plugin.adapter fireResume];
-        }
-    }
-}
-
 - (void)addYouboraAdapterDelegate:(id<YBPlayerAdapterEventDelegate>)delegate {
     if (delegate != nil) {
         if (self.eventDelegates == nil) {
@@ -723,25 +522,6 @@
 - (void)removeYouboraAdapterDelegate:(id<YBPlayerAdapterEventDelegate>)delegate {
     if (delegate != nil && self.eventDelegates != nil) {
         [self.eventDelegates removeObject:delegate];
-    }
-}
-
-- (void) startChronoView {
-    if (self == self.plugin.adsAdapter) {
-        NSMutableArray<YBChrono *> *periods = self.chronos.adViewedPeriods;
-        if ((!periods || !periods.count) || [[periods lastObject] stopTime] != 0) {
-            [periods insertObject:[YBChrono new] atIndex:periods.count];
-            [[periods lastObject] start];
-        }
-    }
-}
-
-- (void) stopChronoView {
-    if (self == self.plugin.adsAdapter) {
-        NSMutableArray<YBChrono *> *periods = self.chronos.adViewedPeriods;
-        if ([periods firstObject] && periods.count > 0 && [[periods lastObject] stopTime] == 0) {
-            [[periods lastObject] stop];
-        }
     }
 }
 

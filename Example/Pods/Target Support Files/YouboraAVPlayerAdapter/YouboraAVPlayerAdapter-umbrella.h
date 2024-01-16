@@ -11,13 +11,8 @@
 #endif
 
 #import "YBAVPlayerAdapter.h"
+#import "YBAVPlayerAdapterSwiftTranformer.h"
 #import "YBAVPlayerAdapterSwiftWrapper.h"
-#import "YBAVPlayerAdsAdapter.h"
-#import "YBAVPlayerAdsAdapterSwiftWrapper.h"
-#import "YBAVPlayerP2PAdapter.h"
-#import "YBAVPlayerPolynetAdapter.h"
-#import "YBAVPlayerStreamrootAdapter.h"
-#import "YBAVPlayerAdapterTranformer.h"
 #import "YouboraAVPlayerAdapter.h"
 
 FOUNDATION_EXPORT double YouboraAVPlayerAdapterVersionNumber;

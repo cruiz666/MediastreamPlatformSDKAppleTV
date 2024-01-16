@@ -5,7 +5,7 @@
 //  Created by Joan on 15/03/2017.
 //  Copyright © 2017 NPAW. All rights reserved.
 //
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 // Forward declaration for the TimerCallback
 @class YBTimer, YBChrono;
@@ -77,11 +77,5 @@ typedef void (^TimerCallback) (YBTimer * timer, long long diffTime);
  * Stops the timer.
  */
 - (void) stop;
-
-/**
- * Adds a new callback to fire on the timer
- * @param callback callback that must conform to type TimerCallback
- */
-- (void) addTimerCallback:(TimerCallback) callback;
 
 @end

@@ -3,7 +3,7 @@ This application makes use of the following third party libraries:
 
 ## GoogleAds-IMA-tvOS-SDK
 
-Copyright 2019 Google, Inc. All rights reserved.
+Copyright 2023 Google, Inc. All rights reserved.
 
 
 ## MediastreamPlatformSDKAppleTV

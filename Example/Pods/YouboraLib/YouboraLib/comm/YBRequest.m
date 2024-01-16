@@ -8,14 +8,11 @@
 
 #import "YBRequest.h"
 #import "YBLog.h"
+#import "YBConstants.h"
 
 // Required for User-Agent building
 #include <sys/sysctl.h>
-#if TARGET_OS_IPHONE==1
-    #import <UIKit/UIKit.h>
-#else
-    #import <Foundation/Foundation.h>
-#endif
+#import <UIKit/UIKit.h>
 
 NSString * const YouboraHTTPMethodGet = @"GET";
 NSString * const YouboraHTTPMethodPost = @"POST";
@@ -160,7 +157,7 @@ static NSMutableArray<YBRequestErrorBlock> * everyErrorListenerList;
                 return;
             }
             
-            if(response != nil && [response isKindOfClass:[NSHTTPURLResponse class]]) {
+            if(response != nil) {
                 NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
                 [YBLog debug:[NSString stringWithFormat:@"Response code for: %@ %ld",weakSelf.service, (long)httpResponse.statusCode]];
             }
@@ -261,7 +258,6 @@ static NSMutableArray<YBRequestErrorBlock> * everyErrorListenerList;
         
         free(name);
         
-        #if TARGET_OS_IPHONE==1
         UIDevice * device = [UIDevice currentDevice];
         
         NSMutableString * builtUserAgent = [NSMutableString stringWithFormat:@"%@/%@/%@/%@/%@",
@@ -271,31 +267,6 @@ static NSMutableArray<YBRequestErrorBlock> * everyErrorListenerList;
                                             machine,
                                             [device systemVersion]
                                             ];
-        #else
-        
-        // Set 'oldp' parameter to NULL to get the size of the data
-        // returned so we can allocate appropriate amount of space
-        sysctlbyname("hw.model", NULL, &size, NULL, 0);
-        
-        char* modelName = (char*)malloc(size);
-        
-        // Get the platform name
-        sysctlbyname("hw.model", name, &size, NULL, 0);
-        
-        NSString *machineName = [NSString stringWithCString:modelName encoding:NSUTF8StringEncoding];
-        
-        free(modelName);
-        
-        NSMutableString * builtUserAgent = [NSMutableString stringWithFormat:@"%@/%@/%@/%@/%@",
-                                            [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"],
-                                            [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"],
-                                            @"Mac",
-                                            machineName,
-                                            [NSProcessInfo processInfo].operatingSystemVersionString
-                                            ];
-        #endif
-        
-       
         
         // Transform non-latin to latin and remove diacritical signs
         CFMutableStringRef inputRef = (__bridge CFMutableStringRef) builtUserAgent;

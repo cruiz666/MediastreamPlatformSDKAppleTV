@@ -30,20 +30,6 @@ typedef NS_ENUM(NSUInteger, YBAdPosition) {
 };
 
 /**
- * Enum defining the possible Youbora ad manifest error values. This referes to the reason
- * why a manifest failed.
- * @see <[YBPlayerAdapter fireManifestError]>
- */
-typedef NS_ENUM(NSUInteger, YBAdManifestError) {
-    /** No response **/
-    YBAdManifestErrorNoResponse,
-    /** Empty response **/
-    YBAdManifestEmptyResponse,
-    /** Wrong response **/
-    YBAdManifestWrongResponse
-};
-
-/**
  * Main Adapter class. All specific player adapters should extend this class specifying a player
  * class.
  *
@@ -166,12 +152,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  */
 - (nullable NSNumber *) getBitrate;
 
-/** Override to return current total bytes
- *
- * @return the total of bytes that were downloaded so far
- */
-- (nullable NSNumber *) getTotalBytes;
-
 /** Override to return user bandwidth throughput
  *
  * @return the current throughput in bits per second
@@ -232,12 +212,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  */
 - (nullable NSNumber *)getPacketSent;
 
-/** Override to return a map with metrics
- *
- * @return metrics
- */
-- (nullable NSDictionary<NSString*, NSString *> *)getMetrics;
-
 /** Override to return player version
  *
  * @return the player version
@@ -255,6 +229,13 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * @return the adapter version
  */
 - (NSString *) getVersion;
+
+/**
+ * Override to return current ad position (only for ads)
+ * @see <YBAdPosition>
+ * @return the current ad position
+ */
+- (YBAdPosition) getPosition;
 
 /**
  * Override to return household id
@@ -290,129 +271,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * @return current p2p state
  */
 -(NSValue *) getIsP2PEnabled;
-
-/// Only ads
-
-/**
- * Override to return current ad position (only for ads)
- * @see <YBAdPosition>
- * @return the current ad position
- */
-- (YBAdPosition) getPosition;
-
-/**
- * Override to return current ad break playing
- * @return current break playing
- */
-- (nullable NSNumber *) getAdBreakNumber;
-
-/**
- * Override to return total breaks will play
- *
- * @return total ad breaks that will play
- */
-- (nullable NSNumber *) getAdGivenBreaks;
-
-/**
- * Override to return total breaks should play
- *
- * @return total ad breaks that should play
- */
-- (nullable NSNumber *) getAdExpectedBreaks;
-
-/**
- * Override to return the ad structure requested
- * (list with number of pre, mid, and post breaks) (only ads)
- *
- * @return how many braeaks per position (pre,mid,post) will be played
- */
-- (nullable NSDictionary<NSString *, NSArray<NSNumber*> *> *) getAdExpectedPattern;
-
-/**
- * Override to return a list of playheads of ad breaks begin time (only ads)
- *
- * @return current time of playaback when an ad break will play
- */
-- (nullable NSArray *) getAdBreaksTime;
-
-/**
- * Override to return the number of ads given for the break (only ads)
- *
- * @return number of ads on current break
- */
-- (nullable NSNumber *) getGivenAds;
-
-/**
- * Override to return the number of ads requested for the break (only ads)
- *
- * @return number of expected ads on current break
- */
-- (nullable NSNumber *) getExpectedAds;
-
-/**
- * Override to return how long the ad has been watched
- *
- * @return how long the ad has been watched
- */
-- (nullable NSNumber *) getAdViewedDuration;
-
-/**
- * Override to return maximum time the ad has been watched without interruptions
- *
- * @return maximum time the ad has been watched without interruptions
- */
-- (nullable NSNumber *) getAdViewability;
-
-/**
- * Override to return if ad can be skipped
- *
- * @return boolean indicating if ad can be skipped
- */
-- (nullable NSValue *) isSkippable;
-
-/**
- * Override to return ad creative id
- *
- * @return string with ad creative id value
- */
-- (nullable NSString *) getAdCreativeId;
-
-/**
- * Override to return ad provider
- *
- * @return string with ad provider
- */
-- (nullable NSString *) getAdProvider;
-
-/**
- * Override to return ad insertion typer
- *
- * @return string with ad insertion type
- */
-- (nullable NSString *) getAdInsertionType;
-
-/**
-* Override to return audio codec
-*
-* @return string with audio codec
-*/
-- (nullable NSString *) getAudioCodec;
-
-/**
-* Override to return video codec
-*
-* @return string with video codec
-*/
-- (nullable NSString *) getVideoCodec;
-
-/**
-* Override to return the url from the player (final or not)
-* This will allow the plugin to parse the manifest faster and reduce the amount
-* of calls to get the manifest
- 
-* @return string with parsed url (final or not)
-*/
-- (nullable NSString *) getURLToParse;
 
 /// ---------------------------------
 /// @name Flow methods
@@ -548,15 +406,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
 - (void) fireSkip;
 
 /**
- * Emits related event
- * @param eventName name of the event (in case of empty or null will be reported as empty and therefore ignored)
- * @param dimensions key value map with dimensions
- * @param values key value map with the event values
- */
-- (void) fireEventWithName:(nullable NSString *) eventName dimensions:(nullable NSDictionary<NSString *, NSString *> *) dimensions values:(nullable NSDictionary<NSString *, NSNumber *> *) values topLevelDimensions:(nullable NSDictionary<NSString *,NSString *> *)topLevelDimensions;
-
-
-/**
  * Shortcut for <fireStop:> with a param casted = true
  */
 - (void) fireCast;
@@ -598,7 +447,7 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
 /**
  * Sends a non-fatal error (with level = "error").
  * @param msg Error message (should be unique for the code)
- * @param code Error code reported (works as identifier as well)
+ * @param code Error code reported
  * @param errorMetadata Extra error info, if available.
  */
 - (void) fireErrorWithMessage:(nullable NSString *) msg code:(nullable NSString *) code andMetadata:(nullable NSString *) errorMetadata;
@@ -607,7 +456,7 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * Sends a non-fatal error (with level = "error"). It's empty by default, every adapter
  * can override it
  * @param msg Error message (should be unique for the code)
- * @param code Error code reported (works as identifier as well)
+ * @param code Error code reported
  * @param errorMetadata Extra error info, if available.
  * @param exception Exception type crom player
  */
@@ -624,7 +473,7 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * Sends a fatal error.
  * This method will also send a stop after the error.
  * @param msg Error message (should be unique for the code)
- * @param code Error code reported (works as identifier as well)
+ * @param code Error code reported
  * @param errorMetadata Extra error info, if available.
  */
 - (void) fireFatalErrorWithMessage:(nullable NSString *) msg code:(nullable NSString *) code andMetadata:(nullable NSString *) errorMetadata;
@@ -634,54 +483,13 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * can override it.
  * This method will also send a stop after the error.
  * @param msg Error message (should be unique for the code)
- * @param code Error code reported (works as identifier as well)
+ * @param code Error code reported
  * @param errorMetadata Extra error info, if available.
  * @param exception Exception type crom player
  */
 - (void) fireFatalErrorWithMessage:(nullable NSString *) msg code:(nullable NSString *) code andMetadata:(nullable NSString *) errorMetadata andException:(nullable NSException *)exception;
 
-//Ads only
 
-/**
- * Sends that a quartile has been reached
- * @param quartileNumber wich quartile has been reached (must be a number between 1 and 3)
- */
-- (void) fireQuartile:(int) quartileNumber;
-
-/**
- * Sends that a manifest has been request successfully
- */
-- (void) fireAdManifest:(nullable NSDictionary<NSString *, NSString *> *) params;
-
-/**
- * Sends that a manifest has not been resquested successfully
- * @see <YBAdManifestError>
- * @param error error type
- * @param message error message
- */
-- (void) fireAdManifestWithError:(YBAdManifestError) error andMessage:(nullable NSString *) message;
-
-/**
- * Shortcut for <fireBreakStart:> with params = nil.
- */
-- (void) fireAdBreakStart;
-
-/**
- * Emits related event and set flags if current status is valid.
- * @param params Map of key:value pairs to add to the request
- */
-- (void) fireAdBreakStart:(nullable NSDictionary<NSString *, NSString *> *) params;
-
-/**
- * Shortcut for <fireBreakStop:> with params = nil.
- */
-- (void) fireAdBreakStop;
-
-/**
- * Emits related event and set flags if current status is valid.
- * @param params Map of key:value pairs to add to the request
- */
-- (void) fireAdBreakStop:(nullable NSDictionary<NSString *, NSString *> *) params;
 
 /**
  * Adds an adapter delegate that will be called whenever the Adapter
@@ -695,16 +503,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * @param delegate the delegate to remove
  */
 - (void) removeYouboraAdapterDelegate:(id<YBPlayerAdapterEventDelegate>) delegate;
-
-/**
- * Starts a new chrono for adViewedPeriods
- */
-- (void) startChronoView;
-
-/**
- * Stops the chrono for the last adViewedPeriod
- */
-- (void) stopChronoView;
 
 @end
 
@@ -796,13 +594,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
 - (void) youboraAdapterEventError:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
 
 /**
- * Adapter detected video event
- * @param params params to add to the request
- * @param adapter the adapter that is firing the event
- */
-- (void) youboraAdapterEventVideoEvent:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
-/**
  * Adapter detected ad click
  * @param params params to add to the request
  * @param adapter the adapter that is firing the event
@@ -815,37 +606,6 @@ typedef NS_ENUM(NSUInteger, YBAdManifestError) {
  * @param adapter the adapter that is firing the event
  */
 - (void) youboraAdapterEventAllAdsCompleted:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
-/** Adapter detected a quartitle has been reached
- * @param params params to add to the request
- * @param adapter the adapter that is firing the event
- */
-- (void) youboraAdapterEventAdQuartile:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
-/** Adapter deteccted a successful ad manifest request
- * @param params params to add to the request
- * @param adapter the adapter that is firing the event
- */
-- (void) youboraAdapterEventAdManifest:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
-/** Adapter detected a unsuccessful ad manifest request
- * @param params params to add to the request
- * @param adapter the adapter that is firing the event
- */
-- (void) youboraAdapterEventAdManifestError:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
-/** Adapter detected a ad break start
- * @param params params to add to the request
- * @param adapter the adapter that is firing the event
- */
-- (void) youboraAdapterEventAdBreakStart:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
-/** Adapter detected a ad break finished
- * @param params params to add to the request
- * @param adapter the adapter that is firing the event
- */
-- (void) youboraAdapterEventAdBreakStop:(nullable NSDictionary *) params fromAdapter:(YBPlayerAdapter *) adapter;
-
 @end
 
 NS_ASSUME_NONNULL_END

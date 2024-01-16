@@ -10,13 +10,12 @@
 
 #import "YBPlugin.h"
 #import "YBFastDataConfig.h"
+#import "YBConstants.h"
 #import "YBLog.h"
 #import "YBRequest.h"
 #import "YBRequestBuilder.h"
 #import "YBOptions.h"
-#import "YBInfinityFlags.h"
-#import "YouboraLib/YouboraLib-Swift.h"
-#import "YBConstants.h"
+#import "YBYouboraUtils.h"
 
 @interface YBViewTransform()
 
@@ -39,14 +38,14 @@
         self.viewIndex = -1;
         self.viewCode = nil;
         
-        NSString * service =  YBConstantsYouboraService.data;
+        NSString * service = YouboraServiceData;
         self.params = [NSMutableDictionary dictionary];
         self.params[@"apiVersion"] = @"v6,v7";
         self.params[@"outputformat"] = @"jsonp";
         YBRequestBuilder * builder = plugin.requestBuilder;
         self.params = [builder buildParams:self.params forService:service];
         if (self.params != nil) {
-            if ([@"nicetest" isEqualToString:self.params[YBConstantsRequest.system]]) {
+            if ([@"nicetest" isEqualToString:self.params[@"system"]]) {
                 // "nicetest" is the default accountCode.
                 // If dound here, it's very likely that the customer has forgotten to set it.
                 [YBLog error:@"No accountCode has been set. Pleas set your accountCode in plugin's options."];
@@ -65,10 +64,7 @@
 
 #pragma mark - Public methods
 - (void) begin {
-    [self begin: nil];
-}
-
--(void)begin:(YBFastDataConfig*)dataConfig {
+    
     if(self.plugin != nil && self.plugin.options != nil && self.plugin.options.offline){
         self.fastDataConfig.code = @"OFFLINE_MODE";
         self.fastDataConfig.host = @"OFFLINE_MODE";
@@ -79,31 +75,17 @@
         return;
     }
     
-    if (dataConfig) {
-        self.fastDataConfig = dataConfig;
-        [self done];
-        return;
-    }
-    
     [self requestData];
 }
 
 - (void)parse:(nullable YBRequest *)request {
     NSMutableDictionary<NSString *, NSString *> * params = request.params;
-    BOOL isInfinityRequest = [self compareRequestService:request.service andServices:@[
-        YBConstantsYouboraInfinity.sessionStart,
-        YBConstantsYouboraInfinity.sessionBeat,
-        YBConstantsYouboraInfinity.sessionNav,
-        YBConstantsYouboraInfinity.sessionStop,
-        YBConstantsYouboraInfinity.sessionEvent
-    ]];
-    
     if (request.host == nil || request.host.length == 0) {
         request.host = self.fastDataConfig.host;
     }
     
-    if (!isInfinityRequest && params[@"code"] == nil) {
-        if([self compareRequestService: request.service andService: YBConstantsYouboraService.offline]) {
+    if (params[@"code"] == nil) {
+        if(request.service == YouboraServiceOffline){
             [self nextView];
         }
         params[@"code"] = self.viewCode;
@@ -113,24 +95,21 @@
         params[@"sessionRoot"] = self.fastDataConfig.code;
     }
     
-    if (isInfinityRequest) {
+    if ([self.plugin getIsInfinity] != nil && [[self.plugin getIsInfinity] isEqual:@YES]) {
+        
         if (params[@"sessionId"] == nil) {
             params[@"sessionId"] = self.fastDataConfig.code;
         }
     }
     
     if (self.plugin.options.accountCode != nil) {
-        params[YBConstantsRequest.accountCode] = self.plugin.options.accountCode;
+        params[@"accountCode"] = self.plugin.options.accountCode;
     }
     
     // Request-specific transforms
-    
-    Boolean pingOrStart = [self compareRequestService:request.service andServices:@[
-        YBConstantsYouboraService.ping,
-        YBConstantsYouboraService.start
-    ]];
-    
-    if (pingOrStart) {
+    NSString * service = request.service;
+    if (service == YouboraServicePing ||
+        service == YouboraServiceStart) {
         
         if (params[@"pingTime"] == nil) {
             params[@"pingTime"] = self.fastDataConfig.pingTime.stringValue;
@@ -140,22 +119,33 @@
             params[@"sessionParent"] = self.fastDataConfig.code;
         }
     }
-    if ([self compareRequestService:request.service andService:YBConstantsYouboraService.offline]) {
+    if (service == YouboraServiceOffline) {
         request.body = [self addCodeToEvents:request.body];
     }
-    if ([self compareRequestService:request.service andService:YBConstantsYouboraInfinity.sessionStart]) {
+    if (service == YouboraServiceSessionStart) {
         if (params[@"beatTime"] == nil) {
             params[@"beatTime"] = self.fastDataConfig.beatTime.stringValue;
         }
+        
+        if ([params[@"code"] isEqualToString:self.viewCode]) {
+            params[@"code"] = self.fastDataConfig.code;
+        }
+    }
+    if (service == YouboraServiceSessionStart ||
+        service == YouboraServiceSessionBeat ||
+        service == YouboraServiceSessionNav ||
+        service == YouboraServiceSessionStop ||
+        service == YouboraServiceSessionEvent) {
+        
+        if ([params[@"code"] isEqualToString:self.viewCode]) {
+            params[@"code"] = self.fastDataConfig.code;
+        }
     }
     
-    Boolean isStart = [self compareRequestService:request.service andServices:@[
-           YBConstantsYouboraService.start,
-           YBConstantsYouboraService.sInit,
-           YBConstantsYouboraInfinity.sessionStart
-       ]];
-    
-    if (isStart && self.fastDataConfig.youboraId != nil) {
+    if ((service == YouboraServiceStart
+         || service == YouboraServiceInit
+         || service == YouboraServiceSessionStart)
+        && self.fastDataConfig.youboraId != nil) {
         params[@"youboraId"] = self.fastDataConfig.youboraId;
     }
     
@@ -163,7 +153,7 @@
 
 - (NSString*) addCodeToEvents:(NSString*) body{
     if(body != nil){
-        return [body stringByReplacingOccurrencesOfString:@"[VIEW_CODE]" withString:self.viewCode];
+        return [body stringByReplacingOccurrencesOfString:@"[VIEW_CODE]" withString:self.fastDataConfig.code];
     }
     return nil;
 }
@@ -261,6 +251,7 @@
 
 - (NSString *) getViewCodeTimeStamp {
     return [NSString stringWithFormat:@"%.0lf",[YBYouboraUtils unixTimeNow]];
+    //return [NSString stringWithFormat:@"%lf", [YBYouboraUtils unixTimeNow]];
 }
 
 - (YBRequest *) createRequestWithHost:(NSString *) host andService:(NSString *) service {
@@ -283,7 +274,7 @@
  * view.
  */
 - (void) buildCode: (BOOL) isOffline {
-    NSString * suffix = isOffline ? @"" : [self getViewCodeTimeStamp];
+    NSString * suffix = isOffline ? [NSString stringWithFormat:@"%d",self.viewIndex] : [self getViewCodeTimeStamp];
     
     if (self.fastDataConfig.code != nil && self.fastDataConfig.code.length > 0) {
         self.viewCode = [NSString stringWithFormat:@"%@_%@",self.fastDataConfig.code, suffix];
@@ -292,29 +283,4 @@
     }
 }
 
--(NSString *)getCurrentViewCode {
-    return self.viewCode;
-}
-
--(NSString *)getSessionRoot {
-    return self.fastDataConfig.code;
-}
-
--(Boolean)compareRequestService:(NSString*)requestService andServices:(NSArray<NSString*>*)services {
-    for (NSString* service in services) {
-        if ([self compareRequestService:requestService andService:service]) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
--(Boolean)compareRequestService:(NSString*)requestService andService:(NSString*)service {
-    return [[requestService lowercaseString] isEqualToString:[service lowercaseString]];
-}
-
--(NSString*)getNotificationName {
-    return NOTIFICATION_NAME_VIEW_TRANSFORM_DONE;
-}
 @end

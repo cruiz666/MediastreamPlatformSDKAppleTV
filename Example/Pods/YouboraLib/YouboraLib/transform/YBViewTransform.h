@@ -52,8 +52,6 @@ NS_ASSUME_NONNULL_BEGIN;
  */
 -(void) begin;
 
--(void)begin:(YBFastDataConfig*)dataConfig;
-
 /**
  * Increments the view counter and generates a new view code.
  * @return the new view code
@@ -71,17 +69,6 @@ NS_ASSUME_NONNULL_BEGIN;
  * Method to get current timestamp
  */
 - (NSString *) getViewCodeTimeStamp;
-
-/**
- * Method to return current view code
- */
-
--(NSString *)getCurrentViewCode;
-
-/**
-* Method to return session root
-*/
--(NSString *)getSessionRoot;
 
 @end
 

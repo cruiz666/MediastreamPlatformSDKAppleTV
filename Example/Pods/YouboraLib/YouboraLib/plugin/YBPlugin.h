@@ -11,7 +11,7 @@
 #import "YBPlayerAdapter.h"
 #import "YBInfinity.h"
 
-@class YBRequestBuilder, YBOptions, YBResourceTransform, YBViewTransform, YBTimer, YBPlayerAdapter, YBCommunication, YBCdnSwitchParser, YBFastDataConfig;
+@class YBRequestBuilder, YBOptions, YBResourceTransform, YBViewTransform, YBTimer, YBPlayerAdapter, YBCommunication;
 
 @class YBPlugin;
 
@@ -32,7 +32,7 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * This is the main class of video analytics. You may want one instance for each video you want
  * to track. Will need <YBPlayerAdapter>s for both content and ads, manage options and general flow.
  */
-@interface YBPlugin : NSObject<YBPlayerAdapterEventDelegate, YBInfinityDelegate>
+@interface YBPlugin : NSObject<YBTransformDoneListener, YBPlayerAdapterEventDelegate, YBInfinityDelegate>
 
 /// ---------------------------------
 /// @name Public properties
@@ -40,17 +40,13 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
 @property(nonatomic, strong, readonly) YBResourceTransform * resourceTransform;
 @property(nonatomic, strong, readonly) YBViewTransform * viewTransform;
 @property(nonatomic, strong, readonly) YBRequestBuilder * requestBuilder;
-@property(nonatomic, strong, readonly) YBCdnSwitchParser * cdnSwitchParser;
 @property(nonatomic, strong, readonly) YBTimer * pingTimer;
 @property(nonatomic, strong, readonly) YBTimer * beatTimer;
-@property(nonatomic, strong, readonly) YBTimer * metadataTimer;
 @property(nonatomic, strong) YBOptions * options;
 @property(nonatomic, strong, nullable) YBPlayerAdapter * adapter;
 @property(nonatomic, strong, nullable) YBPlayerAdapter * adsAdapter;
 
 @property(nonatomic, strong, readonly) YBCommunication * comm;
-
-@property(nonatomic, assign) bool isStarted;
 
 /// ---------------------------------
 /// @name Init
@@ -69,15 +65,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * <setAdapter:>
  */
 - (instancetype) initWithOptions:(nullable YBOptions *) options andAdapter:(nullable YBPlayerAdapter *) adapter;
-
-/**
- * Initializer
- * @param options instance of <YBOptions>
- * @param adapter instance of a <YBPlayerAdapter>. Can also be specified afterwards with
- * @param fastConfig instance of a <YBFastDataConfig>.
- * <setAdapter:>
- */
-- (instancetype) initWithOptions:(nullable YBOptions *) options adapter:(nullable YBPlayerAdapter *) adapter andConfig:(nullable YBFastDataConfig*) fastConfig;
 
 - (instancetype) init NS_UNAVAILABLE;
 
@@ -211,36 +198,16 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
 - (nullable NSString *) getHost;
 
 /**
-* Returns the parse Resource flag
-* @return the parse Resource flag
-*/
--(bool) isParseResource;
-
-/**
  * Returns the parse HLS flag
  * @return the parse HLS flag
  */
 - (bool) isParseHls;
 
 /**
- * Returns the parse DASH flag
- * @return the parse DASH flag
- */
-- (bool) isParseDASH;
-
-/**
- * Returns the parse Location Header flag
- * @return the parse Location Header flag
- */
-- (bool) isParseLocationHeader;
-
-/**
  * Returns the parse Cdn node flag
  * @return the parse Cdn node flag
  */
 - (bool) isParseCdnNode;
-
-
 
 /**
  * Returns the list of Cdn names that are enabled for the <YBResourceTransform>.
@@ -298,18 +265,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
 - (NSNumber *) getBitrate;
 
 /**
- * Returns the total bytes download so far reproducing the video
- * @return number with total bytes (long)
- */
-- (NSNumber *) getTotalBytes;
-
-/**
- * Flag indicating if total bytes should be send or not
- * @return flag true/false to send total bytes
- */
-- (Boolean) isToSendTotalBytes;
-
-/**
  * Returns the content's throughput in bits per second
  * @return the content's throughput
  */
@@ -349,19 +304,13 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * Returns the content's resource after being parsed by the <YBResourceTransform>
  * @return the content's resource
  */
-- (NSString *) getParsedResource;
+- (NSString *) getResource;
 
 /**
  * Returns the content's original resource (before being parsed by the <YBResourceTransform>)
  * @return the content's original resource
  */
 - (NSString *) getOriginalResource;
-
-/**
- * Returns the content's original resource (before being parsed by the <YBResourceTransform>)
- * @return the content's original resource
- */
-- (NSString *) getResource __deprecated_msg("Use getOriginalResource instead");
 
 /**
  * Returns the transaction code
@@ -376,154 +325,10 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
 - (nullable NSString *) getContentMetadata;
 
 /**
- * Returns the content package
- * @return the content package
- */
-- (nullable NSString *) getContentPackage;
-
-/**
- * Returns the content saga
- * @return the content saga
- */
-- (nullable NSString *) getContentSaga;
-
-/**
- * Returns the content tv show
- * @return the content tv show
- */
-- (nullable NSString *) getContentTvShow;
-
-/**
- * Returns the content season
- * @return the content season
- */
-- (nullable NSString *) getContentSeason;
-
-/**
- * Returns the content episode title
- * @return the content episode title
- */
-- (nullable NSString *) getContentEpisodeTitle;
-
-/**
- * Returns the content channel
- * @return the content channel
- */
-- (nullable NSString *) getContentChannel;
-
-/**
- * Returns the content id
- * @return the content id
- */
-- (nullable NSString *) getContentId;
-
-/**
- * Returns the content IMDB id
- * @return the content IMDB id
- */
-- (nullable NSString *) getContentImdbId;
-
-/**
- * Returns the content gracenote id
- * @return the content gracenote id
- */
-- (nullable NSString *) getContentGracenoteId;
-
-/**
- * Returns the content type
- * @return the content type
- */
-- (nullable NSString *) getContentType;
-
-/**
- * Returns the content genre
- * @return the content genre
- */
-- (nullable NSString *) getContentGenre;
-
-/**
- * Returns the content language
- * @return the content language
- */
-- (nullable NSString *) getContentLanguage;
-
-/**
- * Returns the content subtitles
- * @return the content subtitles
- */
-- (nullable NSString *) getContentSubtitles;
-
-/**
- * Returns the content contracted resolution
- * @return the content contracted resolution
- */
-- (nullable NSString *) getContentContractedResolution;
-
-/**
- * Returns the content cost
- * @return the content cost
- */
-- (nullable NSString *) getContentCost;
-
-/**
- * Returns the content price
- * @return the content price
- */
-- (nullable NSString *) getContentPrice;
-
-/**
- * Returns the content playback type
- * @return the content playback type
- */
-- (nullable NSString *) getContentPlaybackType;
-
-/**
- * Returns the content DRM
- * @return the content DRM
- */
-- (nullable NSString *) getContentDrm;
-
-/**
- * Returns the content encoding video codec
- * @return the content encoding video codec
- */
-- (nullable NSString *) getContentEncodingVideoCodec;
-
-/**
- * Returns the content encoding audio codec
- * @return the content encoding audio codec
- */
-- (nullable NSString *) getContentEncodingAudioCodec;
-
-/**
- * Returns the content encoding codec settings
- * @return the content encoding codec settings
- */
-- (nullable NSString *) getContentEncodingCodecSettings;
-
-/**
- * Returns the content encoding codec profile
- * @return the content encoding audio profile
- */
-- (nullable NSString *) getContentEncodingCodecProfile;
-
-/**
- * Returns the content encoding container format
- * @return the content encoding container format
- */
-- (nullable NSString *) getContentEncodingContainerFormat;
-
-/**
  * Returns the content streaming protocol
  * @return the content streaming protocol
  */
 - (nullable NSString *) getStreamingProtocol;
-
-/**
- * Returns the content transport format
- * @return the content transport format
- */
-- (nullable NSString *) getTransportFormat;
 
 /**
  * Returns the version of the player that is used to play the content
@@ -572,13 +377,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * @return the content Adapter version
  */
 - (nullable NSString *) getAdapterVersion;
-
-/**
- * Returns if the current view/session could be affected by an ad blocker
- * @return if there is an ad blocker.
- */
-- (nullable NSValue *) getAdBlockerDetected;
-
 
 /**
  * Returns content's Extraparam1
@@ -764,247 +562,121 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * Returns content's customDimension1
  * @return customDimension1 value
  */
-- (nullable NSString *) getCustomDimension1 __deprecated_msg("Use getContentCustomDimension1 instead");
+- (nullable NSString *) getCustomDimension1;
 
 /**
  * Returns content's customDimension2
  * @return customDimension2 value
  */
-- (nullable NSString *) getCustomDimension2 __deprecated_msg("Use getContentCustomDimension2 instead");
+- (nullable NSString *) getCustomDimension2;
 
 /**
  * Returns content's customDimension3
  * @return customDimension3 value
  */
-- (nullable NSString *) getCustomDimension3 __deprecated_msg("Use getContentCustomDimension3 instead");
+- (nullable NSString *) getCustomDimension3;
 
 /**
  * Returns content's customDimension4
  * @return customDimension5 value
  */
-- (nullable NSString *) getCustomDimension4 __deprecated_msg("Use getContentCustomDimension4 instead");
+- (nullable NSString *) getCustomDimension4;
 
 /**
  * Returns content's customDimension5
  * @return customDimension5 value
  */
-- (nullable NSString *) getCustomDimension5 __deprecated_msg("Use getContentCustomDimension5 instead");
+- (nullable NSString *) getCustomDimension5;
 
 /**
  * Returns content's customDimension6
  * @return customDimension6 value
  */
-- (nullable NSString *) getCustomDimension6 __deprecated_msg("Use getContentCustomDimension6 instead");
+- (nullable NSString *) getCustomDimension6;
 
 /**
  * Returns content's customDimension7
  * @return customDimension7 value
  */
-- (nullable NSString *) getCustomDimension7 __deprecated_msg("Use getContentCustomDimension7 instead");
+- (nullable NSString *) getCustomDimension7;
 
 /**
  * Returns content's customDimension8
  * @return customDimension8 value
  */
-- (nullable NSString *) getCustomDimension8 __deprecated_msg("Use getContentCustomDimension8 instead");
+- (nullable NSString *) getCustomDimension8;
 
 /**
  * Returns content's customDimension9
  * @return customDimension9 value
  */
-- (nullable NSString *) getCustomDimension9 __deprecated_msg("Use getContentCustomDimension9 instead");
+- (nullable NSString *) getCustomDimension9;
 
 /**
  * Returns content's customDimension10
  * @return customDimension10 value
  */
-- (nullable NSString *) getCustomDimension10 __deprecated_msg("Use getContentCustomDimension10 instead");
+- (nullable NSString *) getCustomDimension10;
 
 /**
  * Returns content's customDimension11
  * @return customDimension11 value
  */
-- (nullable NSString *) getCustomDimension11 __deprecated_msg("Use getContentCustomDimension11 instead");
+- (nullable NSString *) getCustomDimension11;
 
 /**
  * Returns content's customDimension12
  * @return customDimension12 value
  */
-- (nullable NSString *) getCustomDimension12  __deprecated_msg("Use getContentCustomDimension12 instead");
+- (nullable NSString *) getCustomDimension12;
 
 /**
  * Returns content's customDimension13
  * @return customDimension13 value
  */
-- (nullable NSString *) getCustomDimension13 __deprecated_msg("Use getContentCustomDimension13 instead");
+- (nullable NSString *) getCustomDimension13;
 
 /**
  * Returns content's customDimension14
  * @return customDimension14 value
  */
-- (nullable NSString *) getCustomDimension14 __deprecated_msg("Use getContentCustomDimension14 instead");
+- (nullable NSString *) getCustomDimension14;
 
 /**
  * Returns content's customDimension15
  * @return customDimension15 value
  */
-- (nullable NSString *) getCustomDimension15 __deprecated_msg("Use getContentCustomDimension15 instead");
+- (nullable NSString *) getCustomDimension15;
 
 /**
  * Returns content's customDimension16
  * @return customDimension16 value
  */
-- (nullable NSString *) getCustomDimension16 __deprecated_msg("Use getContentCustomDimension16 instead");
+- (nullable NSString *) getCustomDimension16;
 
 /**
  * Returns content's customDimension17
  * @return customDimension17 value
  */
-- (nullable NSString *) getCustomDimension17 __deprecated_msg("Use getContentCustomDimension17 instead");
+- (nullable NSString *) getCustomDimension17;
 
 /**
  * Returns content's customDimension18
  * @return customDimension18 value
  */
-- (nullable NSString *) getCustomDimension18  __deprecated_msg("Use getContentCustomDimension18 instead");
+- (nullable NSString *) getCustomDimension18;
 
 /**
  * Returns content's customDimension19
  * @return customDimension19 value
  */
-- (nullable NSString *) getCustomDimension19 __deprecated_msg("Use getContentCustomDimension19 instead");
+- (nullable NSString *) getCustomDimension19;
 
 /**
  * Returns content's customDimension20
  * @return customDimension20 value
  */
-- (nullable NSString *) getCustomDimension20  __deprecated_msg("Use getContentCustomDimension20 instead");
-
-/**
- * Returns content's customDimension1
- * @return customDimension1 value
- */
-- (nullable NSString *) getContentCustomDimension1;
-
-/**
- * Returns content's customDimension2
- * @return customDimension2 value
- */
-- (nullable NSString *) getContentCustomDimension2;
-
-/**
- * Returns content's customDimension3
- * @return customDimension3 value
- */
-- (nullable NSString *) getContentCustomDimension3;
-
-/**
- * Returns content's customDimension4
- * @return customDimension5 value
- */
-- (nullable NSString *) getContentCustomDimension4;
-
-/**
- * Returns content's customDimension5
- * @return customDimension5 value
- */
-- (nullable NSString *) getContentCustomDimension5;
-
-/**
- * Returns content's customDimension6
- * @return customDimension6 value
- */
-- (nullable NSString *) getContentCustomDimension6;
-
-/**
- * Returns content's customDimension7
- * @return customDimension7 value
- */
-- (nullable NSString *) getContentCustomDimension7;
-
-/**
- * Returns content's customDimension8
- * @return customDimension8 value
- */
-- (nullable NSString *) getContentCustomDimension8;
-
-/**
- * Returns content's customDimension9
- * @return customDimension9 value
- */
-- (nullable NSString *) getContentCustomDimension9;
-
-/**
- * Returns content's customDimension10
- * @return customDimension10 value
- */
-- (nullable NSString *) getContentCustomDimension10;
-
-/**
- * Returns content's customDimension11
- * @return customDimension11 value
- */
-- (nullable NSString *) getContentCustomDimension11;
-
-/**
- * Returns content's customDimension12
- * @return customDimension12 value
- */
-- (nullable NSString *) getContentCustomDimension12;
-
-/**
- * Returns content's customDimension13
- * @return customDimension13 value
- */
-- (nullable NSString *) getContentCustomDimension13;
-
-/**
- * Returns content's customDimension14
- * @return customDimension14 value
- */
-- (nullable NSString *) getContentCustomDimension14;
-
-/**
- * Returns content's customDimension15
- * @return customDimension15 value
- */
-- (nullable NSString *) getContentCustomDimension15;
-
-/**
- * Returns content's customDimension16
- * @return customDimension16 value
- */
-- (nullable NSString *) getContentCustomDimension16;
-
-/**
- * Returns content's customDimension17
- * @return customDimension17 value
- */
-- (nullable NSString *) getContentCustomDimension17;
-
-/**
- * Returns content's customDimension18
- * @return customDimension18 value
- */
-- (nullable NSString *) getContentCustomDimension18;
-
-/**
- * Returns content's customDimension19
- * @return customDimension19 value
- */
-- (nullable NSString *) getContentCustomDimension19;
-
-/**
- * Returns content's customDimension20
- * @return customDimension20 value
- */
-- (nullable NSString *) getContentCustomDimension20;
-
-/**
- * Returns content's customDimensions
- * @return customDimensions dictionary
- */
-- (nullable NSString *) getCustomDimensions;
+- (nullable NSString *) getCustomDimension20;
 
 /**
  * Returns content's adCustomDimension1
@@ -1121,81 +793,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
 - (nullable NSString *) getAdMetadata;
 
 /**
- * Returns how many ad breaks will be played
- */
-- (nullable NSString *) getAdGivenBreaks;
-
-/**
- * Returns how many ad breaks should be played
- */
-- (nullable NSString *) getAdExpectedBreaks;
-
-/**
- * Returns how many ad breaks contains each position
- */
-- (nullable NSString *) getAdExpectedPattern;
-
-/**
- * Returns when an ad break will be played
- */
-- (nullable NSString *) getAdBreaksTime;
-
-/**
- * Returns how many ads contains the current ad break
- */
-- (nullable NSString *) getAdGivenAds;
-
-/**
- * Returns ad insertion type
- */
-- (nullable NSString *) getAdInsertionType;
-
-/**
- * Returns current ad break playing
- */
-- (nullable NSString *) getAdBreakNumber;
-
-/**
- * Returns ad break position
- */
-- (NSString *) getAdBreakPosition;
-
-/**
- * Returns the number of ads requested for the break (only ads)
- */
-- (nullable NSString *) getExpectedAds;
-
-/**
- * Returns boolean if any ads may come
- */
-- (nullable NSValue *) getAdsExpected;
-
-/**
- * Returns how long the ad has been watched
- */
-- (nullable NSString *) getAdViewedDuration;
-
-/**
- * Returns maximum time the ad has been watched without interruptions
- */
-- (nullable NSString *) getAdViewability;
-
-/**
- * Returns if the current ad can be skipped, false by default
- */
-- (nullable NSValue *) isAdSkippable;
-
-/**
- * Retruns current ad creative id.
- */
-- (nullable NSString *) getAdCreativeId;
-
-/**
- * Returns current ad provider.
- */
-- (nullable NSString *) getAdProvider;
-
-/**
  * Returns a json-formatted string with plugin info
  * @return plugin info
  */
@@ -1247,12 +844,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * @return the userType
  */
 - (nullable NSString *) getUserType;
-
-/**
- * Returns the user email
- * @return the user email
- */
-- (nullable NSString *) getUserEmail;
 
 /**
  * Returns the anonymousUser
@@ -1381,25 +972,25 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * Returns CDN traffic
  * @return CDN traffic
  */
-- (NSNumber *) getCdnTraffic;
+- (NSString *) getCdnTraffic;
 
 /**
  * Returns P2P traffic
  * @return P2P traffic
  */
-- (NSNumber *) getP2PTraffic;
+- (NSString *) getP2PTraffic;
 
 /**
  * Returns upload traffic
  * @return upload traffic
  */
-- (NSNumber *) getUploadTraffic;
+- (NSString *) getUploadTraffic;
 
 /**
  * Returns if P2P is enabled
  * @return if P2P is enabled
  */
-- (NSValue *) getIsP2PEnabled;
+- (NSString *) getIsP2PEnabled;
 
 /**
  * Returns current nav context
@@ -1412,18 +1003,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * @return Active sessions
  */
 - (NSMutableArray *) getActiveSessions;
-
-/**
- * Returns current active session case sessions actived
- * @return current session
- */
-- (nullable NSString *) getParentId;
-
-/**
- Returns linked view id string
- @return linked view id
- */
-- (NSString *) getLinkedViewId;
 
 /**
  * Get Device info String
@@ -1452,25 +1031,7 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * Retruns vendor id
  * @return Current vendor id
  */
-- (nullable NSString *) getDeviceUUID;
-
-/**
- * Retruns EDID
- * @return Current EDID
- */
-- (nullable NSString *) getDeviceEDID;
-
-/**
- * Returns the video metrics sent on the pings
- * @return content metrics
- */
-- (nullable NSString *) getVideoMetrics;
-
-/**
- * Returns the session metrics sent on the beats
- * @return session metrics
- */
-- (nullable NSString *) getSessionMetrics;
+- (nullable NSString *) getFingerprint;
 
 /**
  * Adds an Init listener
@@ -1531,11 +1092,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * @param listener to add
  */
 - (void) addWillSendPingListener:(YBWillSendRequestBlock) listener;
-/**
- * Adds an video event listener
- * @param listener to add
- */
-- (void) addWillSendVideoEventListener:(YBWillSendRequestBlock) listener;
 
 /**
  * Adds an ad Start listener
@@ -1584,30 +1140,6 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * @param listener to add
  */
 - (void) addWillSendAdErrorListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Adds an ad Manifest listener
- * @param listener to add
- */
-- (void) addWillSendAdManifestListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Adds an ad Break start listener
- * @param listener to add
- */
-- (void) addWillSendAdBreakStartListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Adds an ad Break stop listener
- * @param listener to add
- */
-- (void) addWillSendAdBreakStopListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Adds an ad Quartile listener
- * @param listener to add
- */
-- (void) addWillSendQuartileListener:(YBWillSendRequestBlock) listener;
 
 /**
  * Removes an Init listener
@@ -1715,42 +1247,7 @@ typedef void (^YBWillSendRequestBlock) (NSString * serviceName, YBPlugin * plugi
  * Removes an ad Error listener
  * @param listener to remove
  */
-- (void) removeWillSendAdErrorListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Removes an ad Manifest listener
- * @param listener to remove
- */
-- (void) removeWillSendAdManifestListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Removes an ad Break start listener
- * @param listener to remove
- */
-- (void) removeWillSendAdBreakStartListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Removes an ad Break stop listener
- * @param listener to remove
- */
-- (void) removeWillSendAdBreakStopListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Removes an ad Quartile listener
- * @param listener to remove
- */
-- (void) removeWillSendQuartileListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Removes a video event listener
- * @param listener to remove
- */
-- (void) removeWillSendVideoEventListener:(YBWillSendRequestBlock) listener;
-
-/**
- * Check if there is no post-roll ad to send stop
- */
-- (BOOL)isStopReady;
+-(void) removeWillSendAdErrorListener:(YBWillSendRequestBlock) listener;
 
 @end
 

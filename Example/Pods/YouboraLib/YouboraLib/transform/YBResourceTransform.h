@@ -7,14 +7,18 @@
 //
 
 #import "YBTransformSubclass.h"
+#import "YBHlsParser.h"
 #import "YBCdnParser.h"
 
 @class YBPlugin;
-@protocol YBResourceParser;
+
+NS_ASSUME_NONNULL_BEGIN;
+
 /**
  * Parses resource urls to get transportstreams and CDN-related info.
  */
-@interface YBResourceTransform : YBTransform
+@interface YBResourceTransform : YBTransform<HlsTransformDoneDelegate, CdnTransformDoneDelegate>
+
 /// ---------------------------------
 /// @name Public properties
 /// ---------------------------------
@@ -29,9 +33,9 @@
 /// ---------------------------------
 /**
  * Initializer
- * @param plugin Plugin to check all the info
+ * @param plugin the plugin this ResourceTransform will use to get the info it needs
  */
-- (instancetype _Nonnull )initWithPlugin:(YBPlugin*_Nonnull)plugin;
+-(instancetype) initWithPlugin:(YBPlugin *) plugin;
 
 /// ---------------------------------
 /// @name Public methods
@@ -42,21 +46,14 @@
  * if ended it will restart.
  * @param originalResource the original resource
  */
-- (void) begin:(NSString *_Nullable) originalResource userDefinedTransportFormat:(NSString* _Nullable)definedTransportFormat;
+- (void) begin:(NSString *) originalResource;
 
 /**
  * Get the resource. If the transform is done, the real (parsed) resource will be returned
  * Otherwise the initial one is returned.
  * @return the initial or parsed resource
  */
-- (NSString * _Nullable) getResource;
-
-/**
-* Check if user didn't define a transport format and if there's a valid transport format
-* returns it
-* @return transport format present in manifest or nil
-*/
-- (nullable NSString*) getTransportFormat;
+- (NSString *) getResource;
 
 /**
  * Get CDN name
@@ -82,8 +79,7 @@
  */
 - (nullable NSString *) getNodeTypeString;
 
-
--(void)parse:(id<YBResourceParser> _Nullable)parser currentResource:(NSString* _Nullable)resource userDefinedTransportFormat:(NSString* _Nullable)definedTransportFormat;
--(void)requestAndParse:(id<YBResourceParser> _Nullable)parser currentResource:(NSString* _Nullable)resource userDefinedTransportFormat:(NSString* _Nullable)definedTransportFormat;
--(id<YBResourceParser> _Nullable)getNextParser:(id<YBResourceParser> _Nullable)parser;
 @end
+
+
+NS_ASSUME_NONNULL_END;

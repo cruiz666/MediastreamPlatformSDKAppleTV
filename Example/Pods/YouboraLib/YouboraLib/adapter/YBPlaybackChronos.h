@@ -41,9 +41,6 @@
 /** Chrono for the Ad Init duration */
 @property (nonatomic, strong) YBChrono * adInit;
 
-/** Chrono for the ad viewability */
-@property (nonatomic, strong) NSMutableArray<YBChrono *> * adViewedPeriods;
-
 /// ---------------------------------
 /// @name Public methods
 /// ---------------------------------
