@@ -1,6 +1,6 @@
 {
   "name": "MediastreamPlatformSDKAppleTV",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "summary": "Mediastream Platform SDK for AppleTV",
   "description": "TODO: Add long description of the pod here.",
   "homepage": "https://github.com/cruiz666/MediastreamPlatformSDKAppleTV",
@@ -12,10 +12,10 @@
     "Carlos Ruiz": "cruiz@mediastre.am"
   },
   "source": {
-    "http": "https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.1.0/MediastreamPlatformSDKAppleTV.zip"
+    "http": "https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.2.0/MediastreamPlatformSDKAppleTVxC.zip"
   },
   "platforms": {
-    "tvos": "10.0"
+    "tvos": "14.0"
   },
   "swift_versions": [
     "5.2",
@@ -27,13 +27,13 @@
   "vendored_frameworks": "MediastreamPlatformSDKAppleTV.framework",
   "dependencies": {
     "YouboraAVPlayerAdapter": [
-
+      "6.3.5"
     ],
     "YouboraLib": [
-
+      "6.3.9"
     ],
     "GoogleAds-IMA-tvOS-SDK": [
-      "~> 4.2"
+      "~> 4.9.2"
     ]
   },
   "pod_target_xcconfig": {
