@@ -307,6 +307,7 @@
 		C012FA428A170E22E4FE79652AD8765C /* YouboraLib.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = YouboraLib.debug.xcconfig; sourceTree = "<group>"; };
 		C048748BBF21C4B341785E5E09017CC1 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		C2AC5231177B637DFD1AAED37C47BC8E /* YBOptionKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = YBOptionKeys.swift; path = YouboraLib/plugin/YBOptionKeys.swift; sourceTree = "<group>"; };
+		C8F94C8E2B57285E00A40C9B /* MediastreamPlatformSDKAppleTV.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = MediastreamPlatformSDKAppleTV.xcframework; sourceTree = "<group>"; };
 		C92111DF47936008FBFBE952B2112DC5 /* MediastreamPlatformSDKAppleTV.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = MediastreamPlatformSDKAppleTV.release.xcconfig; sourceTree = "<group>"; };
 		C98B4E163B1A630697CCC93DE2916E13 /* Pods-MediastreamPlatformSDKAppleTV_Example.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-MediastreamPlatformSDKAppleTV_Example.modulemap"; sourceTree = "<group>"; };
 		CA4FD01A2A17ECEDC224E4C987626133 /* YBAVPlayerAdsAdapter.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = YBAVPlayerAdsAdapter.m; path = YouboraAVPlayerAdapter/Generic/adsAdapter/YBAVPlayerAdsAdapter.m; sourceTree = "<group>"; };
@@ -318,7 +319,6 @@
 		D24F986EA220B19003CC5E35AE770EFE /* YouboraAVPlayerAdapter-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "YouboraAVPlayerAdapter-Info.plist"; sourceTree = "<group>"; };
 		DABC7467695B09685B35C8C35275442E /* YBViewTransform.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = YBViewTransform.h; path = YouboraLib/transform/YBViewTransform.h; sourceTree = "<group>"; };
 		DE0F4925D0C3ED2784192538EF7D129A /* YBAVPlayerAdapterTranformer.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = YBAVPlayerAdapterTranformer.m; path = YouboraAVPlayerAdapter/Generic/Transformer/YBAVPlayerAdapterTranformer.m; sourceTree = "<group>"; };
-		E02CE73167271D2217E55B7E2338AA44 /* MediastreamPlatformSDKAppleTV.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = MediastreamPlatformSDKAppleTV.framework; sourceTree = "<group>"; };
 		E093EBFCA672357DE2981FEA27BAD598 /* YBPlugin.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = YBPlugin.h; path = YouboraLib/plugin/YBPlugin.h; sourceTree = "<group>"; };
 		E279B40DC9C030051BAF92E551329B93 /* YouboraAVPlayerAdapter-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "YouboraAVPlayerAdapter-dummy.m"; sourceTree = "<group>"; };
 		E2D986347BE75CE48595EEC44E87E57E /* YBPlayerAdapter.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = YBPlayerAdapter.m; path = YouboraLib/adapter/YBPlayerAdapter.m; sourceTree = "<group>"; };
@@ -529,7 +529,7 @@
 		6E773E779B3FE9432F02666DE995DDF8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E02CE73167271D2217E55B7E2338AA44 /* MediastreamPlatformSDKAppleTV.framework */,
+				C8F94C8E2B57285E00A40C9B /* MediastreamPlatformSDKAppleTV.xcframework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
