@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'MediastreamPlatformSDKAppleTV'
-  s.version          = '0.3.0'
+  s.version          = '0.3.1'
   s.summary          = 'Mediastream Platform SDK for AppleTV'
 
 # This description is used to generate tags and improve search results.
@@ -24,7 +24,7 @@ TODO: Add long description of the pod here.
   s.homepage         = 'https://github.com/cruiz666/MediastreamPlatformSDKAppleTV'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Carlos Ruiz' => 'cruiz@mediastre.am' }
-  s.source           = { :http => 'https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.3.0/MediastreamPlatformSDKAppleTVxC.zip' }
+  s.source           = { :http => 'https://mediastream-platform-sdk-ios.s3.amazonaws.com/appleTV-sdk/0.3.1/MediastreamPlatformSDKAppleTVxC.zip' }
   s.tvos.deployment_target = '14.0'
   s.swift_version    = ['5.2', '5.3', '5.3.1', '5.3.2', '5.3.3']
   s.vendored_frameworks = 'MediastreamPlatformSDKAppleTV.xcframework'
